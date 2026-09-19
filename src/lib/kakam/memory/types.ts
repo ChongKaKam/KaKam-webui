@@ -1,0 +1,21 @@
+export type SegmentKind = 'system' | 'long_term' | 'session' | 'current';
+export type MemoryPreferences = { enabled: boolean; policy: string; days: number; cache: boolean };
+export type Policy = {
+	id: string;
+	name: string;
+	description: string;
+	min_days: number;
+	max_days: number;
+};
+export type Capabilities = { enabled: boolean; available: boolean; policies: Policy[] };
+export type Memory = { id: string; content: string; kind: string; expires_at: string };
+export type Composition = {
+	policy: string;
+	days: number;
+	cache_hit: boolean;
+	status: 'ready' | 'unavailable' | 'disabled' | 'shadow';
+	memory_count: number;
+	model: string;
+	message_id: string;
+	segments: { kind: SegmentKind; characters: number; estimated_tokens: number }[];
+};

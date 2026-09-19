@@ -215,6 +215,7 @@ type OllamaModelDetails = {
 };
 
 type Settings = {
+	kakamMemory?: import('$lib/kakam/memory/types').MemoryPreferences;
 	pinnedModels?: string[];
 	toolServers?: never[];
 	detectArtifacts?: boolean;

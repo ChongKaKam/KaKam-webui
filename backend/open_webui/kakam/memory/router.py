@@ -1,0 +1,64 @@
+from typing import Literal
+from uuid import UUID
+
+import httpx
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
+
+from open_webui.utils.auth import get_verified_user
+
+from . import client
+from .auth import require_permission
+
+router = APIRouter()
+
+
+class NewMemory(BaseModel):
+    content: str = Field(min_length=1, max_length=2000)
+    kind: Literal['profile', 'preference', 'instruction', 'fact', 'episode'] = 'fact'
+
+
+async def proxy(method, path, user, body=None):
+    await require_permission(user)
+    if not client.enabled():
+        raise HTTPException(503, 'KaKam Memory is not enabled on this server')
+    try:
+        return await client.call(method, path, user.id, body, timeout=30)
+    except httpx.HTTPStatusError as exc:
+        code = exc.response.status_code
+        if code == 404:
+            raise HTTPException(404, 'Memory not found') from None
+        if code in (400, 422):
+            raise HTTPException(422, 'Memory was rejected: check content and sensitive information') from None
+        raise HTTPException(503, 'Memory service unavailable') from None
+    except (httpx.HTTPError, RuntimeError, ValueError):
+        raise HTTPException(503, 'Memory service unavailable') from None
+
+
+@router.get('/policies')
+async def policies(user=Depends(get_verified_user)):
+    await require_permission(user)
+    if not client.enabled():
+        return {'enabled': False, 'available': False, 'policies': []}
+    try:
+        items = await proxy('GET', '/v1/policies', user)
+        return {'enabled': True, 'available': True, 'policies': items}
+    except HTTPException as exc:
+        if exc.status_code != 503:
+            raise
+        return {'enabled': True, 'available': False, 'policies': []}
+
+
+@router.get('')
+async def memories(user=Depends(get_verified_user)):
+    return await proxy('GET', '/v1/memories', user)
+
+
+@router.post('')
+async def add(body: NewMemory, user=Depends(get_verified_user)):
+    return await proxy('POST', '/v1/memories', user, body.model_dump())
+
+
+@router.delete('/{memory_id}')
+async def delete(memory_id: UUID, user=Depends(get_verified_user)):
+    return await proxy('DELETE', f'/v1/memories/{memory_id}', user)

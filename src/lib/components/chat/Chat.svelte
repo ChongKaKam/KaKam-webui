@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PromptComposition from '$lib/kakam/memory/components/PromptComposition.svelte';
+	import { getComposition } from '$lib/kakam/memory/service';
 	import { v4 as uuidv4 } from 'uuid';
 	import { toast } from 'svelte-sonner';
 
@@ -1209,7 +1211,10 @@
 			if (message) {
 				const data = event?.data?.data ?? null;
 
-				if (type === 'status') {
+				if (type === 'kakam:memory') {
+					message.meta = { ...message.meta, kakamMemory: data };
+					history = history;
+				} else if (type === 'status') {
 					if (message?.statusHistory) {
 						message.statusHistory.push(data);
 					} else {
@@ -4422,6 +4427,7 @@
 									id={embedded ? messageInputDropzoneId : undefined}
 									class=" pb-2 {dragged ? 'z-0' : 'z-10'}"
 								>
+									<PromptComposition report={getComposition(history)} />
 									<MessageInput
 										bind:this={messageInput}
 										{history}

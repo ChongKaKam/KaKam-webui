@@ -1,0 +1,79 @@
+name: kakam
+
+x-memory-env: &memory-env
+  MEMORY_DATABASE_URL: postgresql://kakam_memory:${MEMORY_DB_PASSWORD:?Set MEMORY_DB_PASSWORD using hex characters}@memory-db:5432/kakam_memory
+  MEMORY_SERVICE_KEY: ${MEMORY_SERVICE_KEY:?Set MEMORY_SERVICE_KEY}
+  MEMORY_EMBEDDING_BASE_URL: ${MEMORY_EMBEDDING_BASE_URL:?Set embedding base URL}
+  MEMORY_EMBEDDING_API_KEY: ${MEMORY_EMBEDDING_API_KEY:-}
+  MEMORY_EMBEDDING_MODEL: ${MEMORY_EMBEDDING_MODEL:?Set embedding model}
+  MEMORY_EMBEDDING_DIMENSION: ${MEMORY_EMBEDDING_DIMENSION:-1536}
+  MEMORY_EXTRACTION_BASE_URL: ${MEMORY_EXTRACTION_BASE_URL:-}
+  MEMORY_EXTRACTION_API_KEY: ${MEMORY_EXTRACTION_API_KEY:-}
+  MEMORY_EXTRACTION_MODEL: ${MEMORY_EXTRACTION_MODEL:-}
+
+services:
+  memory-db:
+    image: pgvector/pgvector:0.8.6-pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      MEMORY_DB_PASSWORD: ${MEMORY_DB_PASSWORD:?Set MEMORY_DB_PASSWORD}
+    volumes:
+      - memory-data:/var/lib/postgresql/data
+      - ./deploy/memory/init-db.sh:/docker-entrypoint-initdb.d/10-memory.sh:ro
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  memory-api:
+    build: ./services/memory
+    image: kakam-memory:local
+    environment: *memory-env
+    depends_on:
+      memory-db:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8081/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  memory-worker:
+    build: ./services/memory
+    image: kakam-memory:local
+    environment: *memory-env
+    command: [python, -m, kakam_memory.worker]
+    depends_on:
+      memory-api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  open-webui:
+    build:
+      context: .
+      args:
+        USE_SLIM: "true"
+    image: kakam-webui:local
+    environment:
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:?Set WEBUI_SECRET_KEY}
+      KAKAM_MEMORY_ENABLED: "true"
+      KAKAM_MEMORY_SERVICE_URL: http://memory-api:8081
+      KAKAM_MEMORY_SERVICE_KEY: ${MEMORY_SERVICE_KEY:?Set MEMORY_SERVICE_KEY}
+      KAKAM_MEMORY_RECALL_MODE: ${KAKAM_MEMORY_RECALL_MODE:-on}
+      KAKAM_MEMORY_WRITE_MODE: ${KAKAM_MEMORY_WRITE_MODE:-on}
+      KAKAM_MEMORY_TIMEOUT_MS: ${KAKAM_MEMORY_TIMEOUT_MS:-1500}
+    ports:
+      - "127.0.0.1:${OPEN_WEBUI_PORT:-3000}:8080"
+    volumes:
+      - webui-data:/app/backend/data
+    # No healthy dependency: Memory outages must not prevent starting WebUI.
+    restart: unless-stopped
+
+volumes:
+  memory-data:
+  webui-data:

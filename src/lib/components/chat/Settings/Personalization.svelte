@@ -1,4 +1,6 @@
 <script lang="ts">
+	import MemorySettings from '$lib/kakam/memory/components/MemorySettings.svelte';
+	let kakamEnabled: boolean | null = null;
 	import Switch from '$lib/components/common/Switch.svelte';
 	import { config, settings } from '$lib/stores';
 	import { createEventDispatcher, onMount, getContext } from 'svelte';
@@ -98,7 +100,6 @@
 
 	onMount(async () => {
 		enableMemory = $settings?.memory ?? $config?.features?.enable_memories ?? false;
-		await loadMemories();
 	});
 </script>
 
@@ -114,6 +115,11 @@
 	</h2>
 
 	<div class="flex-1 min-h-0 overflow-y-auto scrollbar-hover pr-1.5">
+		<MemorySettings {saveSettings} on:availability={async (event) => {
+			kakamEnabled = event.detail.enabled;
+			if (!kakamEnabled) await loadMemories();
+		}} />
+		{#if kakamEnabled === false}
 		<UserSettingSection title={$i18n.t('Memory')} first>
 			<UserSettingRow
 				description={$i18n
@@ -263,6 +269,7 @@
 				</div>
 			{/if}
 		</UserSettingSection>
+		{/if}
 	</div>
 
 	<div class="shrink-0 flex justify-end text-sm font-normal">

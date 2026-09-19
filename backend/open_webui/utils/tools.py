@@ -26,6 +26,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_function as convert_pydantic_model_to_openai_function_spec,
 )
 from open_webui.config import BYPASS_ADMIN_ACCESS_CONTROL
+from open_webui.kakam.memory.client import enabled as kakam_memory_enabled
 from open_webui.env import (
     AIOHTTP_CLIENT_ALLOW_REDIRECTS,
     AIOHTTP_CLIENT_SESSION_SSL,
@@ -657,6 +658,7 @@ async def get_builtin_tools(
     # Add memory tools when memory is enabled and the model allows this builtin category.
     if (
         is_builtin_tool_enabled('memory')
+        and not kakam_memory_enabled()
         and features.get('memory')
         and get_model_capability('memory')
         and await has_user_permission('memories')

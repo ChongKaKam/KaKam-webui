@@ -101,6 +101,7 @@ from open_webui.utils.filter import (
 from open_webui.utils.json_codec import JSONCodec
 from open_webui.utils.mcp.client import MCPClient
 from open_webui.utils.memory import add_memory_context, review_memory_after_turn
+from open_webui.kakam.memory import hooks as kakam_memory
 from open_webui.utils.misc import (
     add_or_update_system_message,
     add_or_update_user_message,
@@ -2644,6 +2645,7 @@ async def process_chat_payload(request, form_data, user, metadata, model):
             raise Exception(f'{e}')
 
     features = form_data.pop('features', None) or {}
+    form_data = await kakam_memory.prepare(request, form_data, user, metadata, model)
     extra_params['__features__'] = features
     if features:
         if 'voice' in features and features['voice']:
@@ -2657,7 +2659,7 @@ async def process_chat_payload(request, form_data, user, metadata, model):
                     form_data['messages'],
                 )
 
-        if 'memory' in features and features['memory'] and await Config.get('memories.system_context.enable'):
+        if not kakam_memory.client.enabled() and 'memory' in features and features['memory'] and await Config.get('memories.system_context.enable'):
             # features is client-supplied; re-check the permission the native FC path enforces.
             if getattr(user, 'role', None) == 'admin' or await has_permission(
                 getattr(user, 'id', ''),
@@ -3113,6 +3115,8 @@ async def process_chat_payload(request, form_data, user, metadata, model):
             raise Exception(f'{e}')
 
     form_data = normalize_messages_for_model(form_data)
+
+    await kakam_memory.emit_composition(form_data, metadata, event_emitter, resolved_model_system_prompt)
 
     return form_data, metadata, events
 
@@ -3857,7 +3861,9 @@ async def background_tasks_handler(ctx):
                         except Exception as e:
                             pass
 
-        if messages:
+        if messages and kakam_memory.client.enabled():
+            await kakam_memory.after_turn(request, user, ctx['model'], metadata, messages)
+        elif messages:
             await review_memory_after_turn(
                 request=request,
                 user=user,
