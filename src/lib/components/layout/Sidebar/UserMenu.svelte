@@ -1,4 +1,5 @@
 <script lang="ts">
+	import MemoryPolicyMenuItem from '$lib/kakam/memory/components/MemoryPolicyMenuItem.svelte';
 	import { createEventDispatcher, getContext, onMount, tick } from 'svelte';
 
 	import { goto } from '$app/navigation';
@@ -546,6 +547,7 @@
 				</a>
 			{/if}
 
+			<MemoryPolicyMenuItem on:navigate={() => (show = false)} />
 			<button
 				class="flex h-[1.6875rem] items-center gap-2 rounded-xl px-2 text-[0.8125rem] w-full hover:bg-gray-100 dark:hover:bg-gray-900 transition cursor-pointer select-none"
 				type="button"

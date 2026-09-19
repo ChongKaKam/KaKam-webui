@@ -19,3 +19,19 @@ export type Composition = {
 	message_id: string;
 	segments: { kind: SegmentKind; characters: number; estimated_tokens: number }[];
 };
+
+export type MemoryActivityDay = {
+	date: string;
+	requests: number;
+	characters: Record<SegmentKind, number>;
+};
+export type MemoryActivity = {
+	days: number;
+	timezone: 'UTC';
+	measurement: 'characters';
+	requests: number;
+	total_characters: number;
+	characters: Record<SegmentKind, number>;
+	heatmap: MemoryActivityDay[];
+	truncated: boolean;
+};

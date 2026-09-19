@@ -16,7 +16,15 @@
 - 保存方式：设置页手动添加/遗忘；完成普通聊天后异步处理用户输入。
   未配置抽取模型时，仅识别“请记住：…”或“remember …”；配置后可提取有原文依据的长期事实。
   不从助手回答推断用户事实，临时/频道聊天不读写长期记忆。
-- `default` 是当前唯一注册策略。设置 → 个性化 → KaKam Memory 选择策略、窗口及缓存。
+- `default` 是当前唯一注册策略。点击用户头像 → **Memory Policy**，直接打开独立设置页；
+  也可从设置侧栏进入。原「个性化」入口保留兼容。
+- Memory Policy 页参考「用量 → Token 活动」展示概览、按日方格、类别筛选与日期详情。
+  紫=System、绿=长期记忆、蓝=Session、橙=当前 Prompt；全部模式按当天占比最高类别着色，
+  单类别模式按该类别占比着色，颜色越深占比越高，灰色表示无统计或该类别占比为零。
+  点击一天查看当天四类占比，点击“返回整个周期”恢复累计。默认查看 180 天活动，可选 7/30/90/180 天；
+  这是**统计周期**，不改变策略的 7/14/30 天长期记忆窗口。
+  占比按已保存请求的字符数加权计算，不是请求占比或计费 Token；旧对话、临时对话不补算。
+  所有分支中已保存的响应快照均计入统计，用户删除聊天后对应快照不再计入。
 - 方格图显示最近一次请求的四类文本字符数量；紫=System，绿=长期记忆，蓝=Session，橙=当前 Prompt。
   点击图例突出该类别，悬停显示字符数。按响应保存到已有 `message.meta`，切换分支可查看对应统计。
   图中是推理前快照，不是输入框实时预览；后续工具循环不更新快照。
@@ -83,6 +91,10 @@ Memory API 和 PostgreSQL **不发布宿主机端口**。
 ## 服务接口与安全边界
 
 浏览器仅访问 `/api/custom/memory`（GET/POST）、`/{id}`（DELETE）及 `/policies`（GET）。
+另有 `GET /api/custom/memory/activity?days=30`（7..180），从 WebUI 自己的消息 metadata
+读取当前用户的数量快照并按 UTC 天聚合。只返回数量，不返回记忆/聊天原文。
+查询最多取最近 5000 条带 metadata 的候选响应；超过时 UI 明确提示部分统计，不冒充全量。
+权限在后端重查，浏览器不能指定 owner；Memory 服务宕机时仍可查看已保存统计。
 BFF 验证登录、`features.memories` 权限；身份来自已认证用户，不接受浏览器传入 owner。
 内部 API 使用 `Authorization: Bearer <service key>` 与 `X-Memory-User: <opaque user id>`。
 服务密钥持有者是可信身份签发方，所以绝不能向浏览器公开密钥或把 API 直接暴露公网。
@@ -123,8 +135,10 @@ shadow 写入使用独立用户 namespace，不影响正式召回；shadow recal
 ```sh
 python3.11 -m venv services/memory/.venv
 services/memory/.venv/bin/pip install -r services/memory/requirements.txt pytest
+# 可选：运行 WebUI adapter 的 SQLite 查询集成测试（复用上游依赖）
+services/memory/.venv/bin/pip install 'sqlalchemy[asyncio]==2.0.50' aiosqlite==0.22.1
 services/memory/.venv/bin/pytest -q services/memory/tests
-npx vitest run src/lib/kakam/memory/service.test.ts
+npx vitest run src/lib/kakam/memory
 npm run check
 npm run build
 ```
@@ -145,6 +159,14 @@ API/adapter 单测使用 fake provider/repository，不会调用真实模型或�
   不等同于真实模型 + PostgreSQL + WebUI 全链路验证，部署后需执行上述冒烟检查。
 - `npm run check` 与未修改 HEAD 均为 7789 个类型错误，新增模块没有类型错误；不把全仓检查标记为通过。
 - 本机原 Node 22 动态库损坏，前端验证使用可用 Node 24.19；交付 Dockerfile 仍使用上游规定的 Node 22。
+
+Memory Policy 入口与活动页增量验证（同日）：
+
+- Python 32 项通过（含 SQLite 查询的用户/聊天归属隔离），PostgreSQL 2 项仍因缺少专用库跳过。
+- 前端 Vitest 12 项通过，Vite 生产构建通过；基础 Ruff 和 diff 空白检查通过。
+- 浏览器组件验收使用模拟数据验证头像入口、四类占比、周期切换、日期选中和类别筛选；
+  尚未执行真实登录用户与 PostgreSQL 的全链路验收。
+- 全仓类型检查仍为 7789 个原有错误、202 个警告，自定义模块无报错。
 
 依赖仅复用现有栈的 FastAPI/Uvicorn、HTTPX 和 Psycopg（独立服务需单独安装）；pgvector 使用数据库扩展，
 无需额外 Python vector SDK。参考：[pgvector](https://github.com/pgvector/pgvector) 和

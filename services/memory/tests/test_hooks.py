@@ -178,5 +178,16 @@ def test_bff_uses_authenticated_user_not_browser_identity(adapter, monkeypatch):
         )
         assert response.status_code == 200
         assert hooks.client.call.call_args.args[2] == 'alice'
+        from open_webui.kakam.memory.activity import summarize
+
+        read_activity = AsyncMock(return_value=summarize([], 30))
+        monkeypatch.setattr(router, 'get_activity', read_activity)
+        monkeypatch.setenv('KAKAM_MEMORY_ENABLED', 'false')
+        headers = {'Authorization': 'Bearer test-login', 'X-Memory-User': 'victim'}
+        assert client.get('/api/custom/memory/activity?days=30', headers=headers).status_code == 200
+        read_activity.assert_awaited_once_with('alice', 30)
+        assert client.get('/api/custom/memory/activity').status_code == 401
+        assert client.get('/api/custom/memory/activity?days=181', headers=headers).status_code == 422
         monkeypatch.setattr(router, 'require_permission', AsyncMock(side_effect=HTTPException(403)))
         assert client.get('/api/custom/memory', headers={'Authorization': 'Bearer test-login'}).status_code == 403
+        assert client.get('/api/custom/memory/activity', headers=headers).status_code == 403

@@ -2,12 +2,13 @@ from typing import Literal
 from uuid import UUID
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from open_webui.utils.auth import get_verified_user
 
 from . import client
+from .activity import MemoryActivity, get_activity
 from .auth import require_permission
 
 router = APIRouter()
@@ -57,6 +58,13 @@ async def memories(user=Depends(get_verified_user)):
 @router.post('')
 async def add(body: NewMemory, user=Depends(get_verified_user)):
     return await proxy('POST', '/v1/memories', user, body.model_dump())
+
+
+@router.get('/activity', response_model=MemoryActivity)
+async def activity(days: int = Query(default=30, ge=7, le=180), user=Depends(get_verified_user)):
+    await require_permission(user)
+    # Saved counts remain readable when the independent Memory service is down.
+    return await get_activity(user.id, days)
 
 
 @router.delete('/{memory_id}')

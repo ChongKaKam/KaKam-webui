@@ -1,4 +1,6 @@
 <script lang="ts">
+	import MemoryPolicySettings from '$lib/kakam/memory/components/MemoryPolicySettings.svelte';
+	import { canAccessMemoryPolicy, memoryPolicyTab } from '$lib/kakam/memory/navigation';
 	import { browser } from '$app/environment';
 	import { getContext, onMount, tick } from 'svelte';
 	import type { Writable } from 'svelte/store';
@@ -142,6 +144,7 @@
 		connections: 'Services',
 		tools: 'Services',
 		personalization: 'Preferences',
+		'memory-policy': 'Preferences',
 		audio: 'Preferences',
 		data_controls: 'Data',
 		usage: 'Data',
@@ -428,6 +431,7 @@
 				'userpreferences'
 			]
 		},
+		memoryPolicyTab,
 		{
 			id: 'audio',
 			title: 'Audio',
@@ -797,6 +801,7 @@
 
 	const getAvailableSettings = () => {
 		const personalSettings = allSettings.filter((tab) => {
+			if (tab.id === memoryPolicyTab.id) return canAccessMemoryPolicy($user);
 			if (tab.id === 'connections') {
 				return $config?.features?.enable_direct_connections;
 			}
@@ -1076,6 +1081,17 @@
 							<Face className="size-3.5" strokeWidth="2" />
 							<span>{$i18n.t('Personalization')}</span>
 						</button>
+					{:else if tabId === memoryPolicyTab.id}
+						<button
+							role="tab"
+							aria-controls="tab-memory-policy"
+							aria-selected={selectedTab === memoryPolicyTab.id}
+							class={tabButtonClass(selectedTab === memoryPolicyTab.id)}
+							on:click={() => (selectedTab = memoryPolicyTab.id)}
+						>
+							<DatabaseSettings className="size-3.5" />
+							<span>Memory Policy</span>
+						</button>
 					{:else if tabId === 'audio'}
 						<button
 							role="tab"
@@ -1242,6 +1258,8 @@
 						toast.success($i18n.t('Settings saved successfully!'));
 					}}
 				/>
+			{:else if selectedTab === memoryPolicyTab.id && canAccessMemoryPolicy($user)}
+				<MemoryPolicySettings {saveSettings} />
 			{:else if selectedTab === 'audio'}
 				<Audio
 					{saveSettings}
