@@ -1,5 +1,5 @@
 import { WEBUI_BASE_URL } from '$lib/constants';
-import type { Capabilities, Memory, MemoryActivity } from './types';
+import type { Capabilities, ContextDetails, Memory, MemoryActivity } from './types';
 
 async function request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
 	const response = await fetch(`${WEBUI_BASE_URL}/api/custom/memory${path}`, {
@@ -12,6 +12,8 @@ async function request<T>(path: string, method = 'GET', body?: unknown): Promise
 }
 
 export const getPolicies = () => request<Capabilities>('/policies');
+export const getContextDetails = (id: string) =>
+	request<ContextDetails>(`/context/${encodeURIComponent(id)}`);
 export const getMemoryActivity = (days: number) =>
 	request<MemoryActivity>(`/activity?days=${days}`);
 export const getMemories = () => request<Memory[]>('');

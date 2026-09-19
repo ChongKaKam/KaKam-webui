@@ -2,7 +2,7 @@ from typing import Literal
 from uuid import UUID
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, Field
 
 from open_webui.utils.auth import get_verified_user
@@ -10,6 +10,7 @@ from open_webui.utils.auth import get_verified_user
 from . import client
 from .activity import MemoryActivity, get_activity
 from .auth import require_permission
+from .details import ContextDetails, lookup
 
 router = APIRouter()
 
@@ -70,3 +71,23 @@ async def activity(days: int = Query(default=30, ge=7, le=180), user=Depends(get
 @router.delete('/{memory_id}')
 async def delete(memory_id: UUID, user=Depends(get_verified_user)):
     return await proxy('DELETE', f'/v1/memories/{memory_id}', user)
+
+
+@router.get('/context/{snapshot_id}', response_model=ContextDetails)
+async def context_details(snapshot_id: UUID, response: Response, user=Depends(get_verified_user)):
+    from open_webui.models.chats import Chats
+
+    await require_permission(user)
+    response.headers['Cache-Control'] = 'no-store'
+    item = lookup(str(snapshot_id), user.id)
+    if not item or not await Chats.is_chat_owner(item['chat_id'], user.id):
+        raise HTTPException(404, 'Context preview expired or unavailable', headers={'Cache-Control': 'no-store'})
+    details = item['details']
+    # A model's administrator-provided System prompt is not a public contract.
+    if user.role != 'admin':
+        for section in details.sections:
+            if section.kind == 'system':
+                section.content = ''
+                section.restricted = True
+                section.truncated = False
+    return details

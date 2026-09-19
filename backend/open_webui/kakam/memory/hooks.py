@@ -8,7 +8,8 @@ from open_webui.utils.misc import add_or_update_system_message
 
 from . import client
 from .auth import allowed, preferences
-from .composition import composition, render, text_content
+from .composition import composition, render, split_context, text_content
+from .details import remember
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ async def prepare(request, form_data, user, metadata, model):
         and is_saved_chat_id(metadata.get('chat_id'))
         and (model.get('info', {}).get('meta', {}).get('capabilities') or {}).get('memory', True)
     )
-    if not eligible or mode('RECALL') == 'off':
+    if metadata.get('task') or not is_saved_chat_id(metadata.get('chat_id')):
         return form_data
     query = next((text_content(m) for m in reversed(form_data['messages']) if m.get('role') == 'user'), '')[-8000:]
     try:
@@ -49,6 +50,9 @@ async def prepare(request, form_data, user, metadata, model):
             if not await allowed(user):
                 return form_data
             if not await Chats.is_chat_owner(metadata['chat_id'], user.id):
+                return form_data
+            metadata['kakam_detail_owner'] = user.id
+            if not eligible or mode('RECALL') == 'off':
                 return form_data
             result = await client.call(
                 'POST',
@@ -80,6 +84,16 @@ async def emit_composition(form_data, metadata, emitter, model_system=''):
         model=form_data.get('model'),
     )
     metadata['kakam_composition'] = payload
+    if metadata.get('kakam_detail_owner') and metadata.get('message_id'):
+        try:
+            payload['detail_id'] = remember(
+                metadata['kakam_detail_owner'],
+                metadata['chat_id'],
+                metadata['message_id'],
+                split_context(form_data.get('messages', []), report['memory_text'], model_system, label_roles=True),
+            )
+        except Exception as exc:
+            log.warning('KaKam context preview skipped (%s)', type(exc).__name__)
     if emitter:
         try:
             await emitter({'type': 'kakam:memory', 'data': payload})

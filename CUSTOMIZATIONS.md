@@ -31,3 +31,13 @@ No new upstream tables or migrations; no access to long-term memory text for ana
 The UI mirrors the Usage/Token activity layout (summary, calendar squares, filters)
 without modifying the native `Usage.svelte`. Color intensity represents character
 share, not billable tokens. Original Personalization and per-chat composition remain.
+
+### Context drawer
+
+The existing `Chat.svelte` mount now delegates to a compact Context button and a
+responsive drawer in `src/lib/kakam/memory/components/`; no further upstream edits.
+Prompt previews use the existing pre-inference hook and a project-owned, bounded
+15-minute in-process cache. Only a random preview ID joins the persisted counts.
+The custom BFF authenticates each preview read and rechecks chat ownership;
+System text is restricted to administrators. No raw preview text in socket events
+or chat metadata, no new database tables, no upstream Drawer/Modal modifications.

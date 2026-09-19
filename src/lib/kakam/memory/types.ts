@@ -17,7 +17,13 @@ export type Composition = {
 	memory_count: number;
 	model: string;
 	message_id: string;
+	detail_id?: string;
 	segments: { kind: SegmentKind; characters: number; estimated_tokens: number }[];
+};
+
+export type ContextDetails = {
+	message_id: string;
+	sections: { kind: SegmentKind; content: string; truncated: boolean; restricted: boolean }[];
 };
 
 export type MemoryActivityDay = {

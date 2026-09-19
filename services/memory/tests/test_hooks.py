@@ -84,6 +84,11 @@ def test_context_order_preserves_session_tools_and_no_raw_event(adapter):
     event = emitter.call_args.args[0]
     assert event['type'] == 'kakam:memory' and event['data']['cache_hit']
     assert '中文' not in str(event) and 'memory_text' not in event['data']
+    from open_webui.kakam.memory.details import lookup
+
+    snapshot = lookup(event['data']['detail_id'], user.id)
+    assert snapshot['details'].sections[1].kind == 'long_term'
+    assert '中文' in snapshot['details'].sections[1].content
 
 
 def test_timeout_fails_open(adapter):
@@ -178,6 +183,28 @@ def test_bff_uses_authenticated_user_not_browser_identity(adapter, monkeypatch):
         )
         assert response.status_code == 200
         assert hooks.client.call.call_args.args[2] == 'alice'
+        from open_webui.kakam.memory.details import remember
+
+        snapshot = remember('alice', 'chat', 'reply', {'system': ['admin secret'], 'current': ['user text']})
+        path = f'/api/custom/memory/context/{snapshot}'
+        headers = {'Authorization': 'Bearer test-login'}
+        assert client.get(path).status_code == 401
+        result = client.get(path, headers=headers)
+        assert result.status_code == 200 and result.headers['cache-control'] == 'no-store'
+        assert result.json()['sections'][0]['content'] == 'admin secret'
+        user.role = 'user'
+        result = client.get(path, headers=headers)
+        assert result.json()['sections'][0]['restricted'] is True
+        assert 'admin secret' not in result.text
+        assert result.json()['sections'][1]['content'] == 'user text'
+        user.id = 'bob'
+        assert client.get(path, headers=headers).status_code == 404
+        user.id = 'alice'
+        chats = adapter[3]
+        chats.is_chat_owner.return_value = False
+        assert client.get(path, headers=headers).status_code == 404
+        chats.is_chat_owner.return_value = True
+        user.role = 'admin'
         from open_webui.kakam.memory.activity import summarize
 
         read_activity = AsyncMock(return_value=summarize([], 30))
@@ -191,3 +218,18 @@ def test_bff_uses_authenticated_user_not_browser_identity(adapter, monkeypatch):
         monkeypatch.setattr(router, 'require_permission', AsyncMock(side_effect=HTTPException(403)))
         assert client.get('/api/custom/memory', headers={'Authorization': 'Bearer test-login'}).status_code == 403
         assert client.get('/api/custom/memory/activity', headers=headers).status_code == 403
+        assert client.get(path, headers=headers).status_code == 403
+
+
+def test_preview_failure_does_not_break_chat(adapter, monkeypatch):
+    hooks, user, meta, _ = adapter
+    data = asyncio.run(hooks.prepare(None, conversation(), user, meta, {}))
+
+    def fail(*args, **kwargs):
+        raise RuntimeError('preview failure')
+
+    monkeypatch.setattr(hooks, 'remember', fail)
+    emitter = AsyncMock()
+    asyncio.run(hooks.emit_composition(data, meta, emitter))
+    assert 'detail_id' not in emitter.call_args.args[0]['data']
+    assert len(emitter.call_args.args[0]['data']['segments']) == 4
