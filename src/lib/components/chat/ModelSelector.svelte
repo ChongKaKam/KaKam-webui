@@ -1,4 +1,10 @@
 <script lang="ts">
+	import CascadeModelSelector from '$lib/kakam/chat/components/CascadeModelSelector.svelte';
+	import type { ChatParams } from '$lib/kakam/chat/effort';
+	export let cascade = false;
+	export let params: ChatParams = {};
+	export let activeModelId: string | undefined = undefined;
+	export let onModelSelect: () => void = () => {};
 	import { models, pinnedModels, settings, user } from '$lib/stores';
 	import { getContext } from 'svelte';
 	import { toast } from 'svelte-sonner';
@@ -63,28 +69,46 @@
 	<div class="flex min-w-0 max-w-full">
 		<div class="min-w-0 max-w-full overflow-hidden">
 			<div class="min-w-0 max-w-full">
-				<Selector
-					bind:this={selector}
-					id="model"
-					placeholder={$i18n.t('Select a model')}
-					items={$models.map((model) => ({
-						value: model.id,
-						label: model.name,
-						model: model
-					}))}
-					{pinModelHandler}
-					{className}
-					{triggerClassName}
-					{placement}
-					{align}
-					{showSetDefault}
-					onSetDefault={saveDefaultModel}
-					multipleEnabled={$user?.role === 'admin' ||
-						($user?.permissions?.chat?.multiple_models ?? true)}
-					{disabled}
-					bind:compareEnabled={compareModels}
-					bind:values={selectedModels}
-				/>
+				{#if cascade}
+					<CascadeModelSelector
+						bind:this={selector}
+						items={$models.map((model) => ({ value: model.id, label: model.name, model }))}
+						bind:values={selectedModels}
+						bind:params
+						bind:compareEnabled={compareModels}
+						{disabled}
+						{activeModelId}
+						{onModelSelect}
+						{pinModelHandler}
+						{showSetDefault}
+						onSetDefault={saveDefaultModel}
+						multipleEnabled={$user?.role === 'admin' ||
+							($user?.permissions?.chat?.multiple_models ?? true)}
+					/>
+				{:else}
+					<Selector
+						bind:this={selector}
+						id="model"
+						placeholder={$i18n.t('Select a model')}
+						items={$models.map((model) => ({
+							value: model.id,
+							label: model.name,
+							model: model
+						}))}
+						{pinModelHandler}
+						{className}
+						{triggerClassName}
+						{placement}
+						{align}
+						{showSetDefault}
+						onSetDefault={saveDefaultModel}
+						multipleEnabled={$user?.role === 'admin' ||
+							($user?.permissions?.chat?.multiple_models ?? true)}
+						{disabled}
+						bind:compareEnabled={compareModels}
+						bind:values={selectedModels}
+					/>
+				{/if}
 			</div>
 		</div>
 	</div>

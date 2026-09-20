@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CodeStyleSettings from '$lib/kakam/code/components/CodeStyleSettings.svelte';
 	import { config, settings, user } from '$lib/stores';
 	import { onMount, getContext } from 'svelte';
 	import { toast } from 'svelte-sonner';
@@ -1270,6 +1271,8 @@
 			{$i18n.t('Show the regenerate action menu for assistant responses.')}
 		</p>
 	</div>
+
+	<CodeStyleSettings value={currentSettings.kakamCodeTheme} save={(value) => saveSettings(value)} />
 
 	<div>
 		<div class={settingRowClass}>

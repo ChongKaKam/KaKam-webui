@@ -57,8 +57,15 @@ body {
 }
 .kakam-composer #message-input-container {
 	background: var(--kakam-surface);
-	border-color: var(--kakam-border);
-	box-shadow: 0 3px 16px rgb(0 0 0 / 0.035);
+	border-color: transparent;
+	box-shadow: none;
+	outline: none;
+}
+.kakam-composer #message-input-container:hover,
+.kakam-composer #message-input-container:focus-within {
+	border-color: transparent;
+	box-shadow: none;
+	outline: none;
 }
 .kakam-composer #chat-input {
 	font-size: 1rem !important;
@@ -73,7 +80,7 @@ body {
 	gap: 0.25rem;
 }
 .kakam-composer .kakam-model-slot {
-	max-width: 12rem;
+	max-width: min(22rem, 55vw);
 }
 .kakam-codeblock {
 	min-width: 0;
@@ -104,69 +111,6 @@ body {
 }
 .kakam-code-content > .kakam-code-spacer {
 	display: none;
-}
-.kakam-codeblock pre.hljs {
-	margin: 0;
-	padding: 1.25rem;
-	background: var(--kakam-surface);
-	color: var(--kakam-text);
-	tab-size: 4;
-}
-.kakam-codeblock pre code {
-	font-family: var(--kakam-mono);
-	font-size: 0.875rem;
-	line-height: 1.7;
-	white-space: pre;
-	display: block;
-}
-.kakam-codeblock pre.hljs [class^='hljs-'] {
-	color: inherit;
-}
-.kakam-codeblock pre.hljs .hljs-keyword,
-.kakam-codeblock pre.hljs .hljs-selector-tag {
-	color: #a626a4;
-}
-.kakam-codeblock pre.hljs .hljs-string,
-.kakam-codeblock pre.hljs .hljs-attr {
-	color: #287a3f;
-}
-.kakam-codeblock pre.hljs .hljs-title,
-.kakam-codeblock pre.hljs .hljs-type,
-.kakam-codeblock pre.hljs .hljs-variable,
-.kakam-codeblock pre.hljs .hljs-symbol,
-.kakam-codeblock pre.hljs .hljs-meta,
-.kakam-codeblock pre.hljs .hljs-built_in {
-	color: #2864b4;
-}
-.kakam-codeblock pre.hljs .hljs-number,
-.kakam-codeblock pre.hljs .hljs-literal {
-	color: #a04e08;
-}
-.kakam-codeblock pre.hljs .hljs-comment {
-	color: #727272;
-}
-.dark .kakam-codeblock pre.hljs .hljs-keyword,
-.dark .kakam-codeblock pre.hljs .hljs-selector-tag {
-	color: #dba5ef;
-}
-.dark .kakam-codeblock pre.hljs .hljs-string,
-.dark .kakam-codeblock pre.hljs .hljs-attr {
-	color: #a5d6a7;
-}
-.dark .kakam-codeblock pre.hljs .hljs-title,
-.dark .kakam-codeblock pre.hljs .hljs-type,
-.dark .kakam-codeblock pre.hljs .hljs-variable,
-.dark .kakam-codeblock pre.hljs .hljs-symbol,
-.dark .kakam-codeblock pre.hljs .hljs-meta,
-.dark .kakam-codeblock pre.hljs .hljs-built_in {
-	color: #91caff;
-}
-.dark .kakam-codeblock pre.hljs .hljs-number,
-.dark .kakam-codeblock pre.hljs .hljs-literal {
-	color: #f0bd8b;
-}
-.dark .kakam-codeblock pre.hljs .hljs-comment {
-	color: #a0a0a0;
 }
 .kakam-settings #settings-tabs-container {
 	background: var(--kakam-surface);
@@ -244,7 +188,7 @@ body {
 		justify-content: flex-end;
 	}
 	.kakam-composer .kakam-model-slot {
-		max-width: min(9rem, 33vw);
+		max-width: min(18rem, calc(100vw - 6.5rem));
 	}
 	.kakam-composer
 		:is(
@@ -265,9 +209,6 @@ body {
 	}
 	.kakam-code-toolbar button {
 		min-height: 2.5rem;
-	}
-	.kakam-codeblock pre.hljs {
-		padding: 1rem;
 	}
 	.kakam-settings-shell {
 		padding: max(0.5rem, env(safe-area-inset-top, 0px)) max(0.5rem, env(safe-area-inset-right, 0px))

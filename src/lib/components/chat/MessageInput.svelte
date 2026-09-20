@@ -1,5 +1,4 @@
 <script lang="ts">
-	import EffortSelector from '$lib/kakam/chat/components/EffortSelector.svelte';
 	import type { ChatParams } from '$lib/kakam/chat/effort';
 	export let params: ChatParams = {};
 	import DOMPurify from 'dompurify';
@@ -2525,6 +2524,11 @@
 								<div class="kakam-composer-actions self-end flex space-x-1 mr-1 min-w-0 gap-[0.03125rem]">
 									<div class="kakam-model-slot flex min-w-0 max-w-[10rem] items-center sm:max-w-[13rem]">
 										<ModelSelector
+											cascade={true}
+											bind:params
+											disabled={generating}
+											activeModelId={atSelectedModel?.id}
+											onModelSelect={() => (atSelectedModel = undefined)}
 											bind:this={modelSelector}
 											bind:selectedModels
 											showSetDefault={!history?.currentId}
@@ -2534,7 +2538,6 @@
 										/>
 									</div>
 
-									<EffortSelector modelIds={selectedModelIds} bind:params disabled={generating} />
 
 									{#if hasChatVariables}
 										<Tooltip content={$i18n.t('Chat Variables')} placement="top">

@@ -3,10 +3,11 @@
 The composer shows `none`, `low`, `medium`, `high`, `extra high`. Unsupported
 choices are disabled, not silently sent. A supported model defaults to `high`;
 if metadata excludes high, the strongest declared level is used. Unknown models
-show disabled `none` and omit the parameter. Switching models restores that
-model's selection from the existing per-chat params (`kakam_effort`). Compare
-mode offers the intersection of supported levels; when there is no common level,
-requests retain each model's own valid default or saved selection.
+offer only `none` and omit the parameter. Switching models restores that
+model's selection from the existing per-chat params (`kakam_effort`). The capsule opens a cascading model/effort menu. Compare mode configures each
+model in its own submenu; each request retains that model's valid default or
+saved selection. The capsule summarizes the first model and the additional model
+count. On phones, a back action returns from effort to the model list.
 
 Detection is conservative: exact API IDs/base IDs and dated snapshots of
 `gpt-6-astra`, `gpt-5.5`, `gpt-5.2`, and `gpt-5` are recognized. Display names,

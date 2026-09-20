@@ -100,3 +100,41 @@ The stylesheet keeps the user's UI scale/font preference, adds readable chat/cod
 spacing, larger settings targets, mobile wrapping, and safe-area padding. Safe-area
 behavior still requires a physical iPhone check; desktop viewport testing cannot
 simulate the notch or software keyboard fully.
+
+## Cascading model menu and Shiki code styles
+
+Project implementation: `src/lib/kakam/chat/components/CascadeModelSelector.svelte`,
+`chat/model-menu.ts`, and `src/lib/kakam/code/`. Shiki 4 is already a production
+dependency and is used by upstream file/notebook previews; no dependency changes.
+
+| Upstream file | Reason / behavior delegated to custom modules |
+| --- | --- |
+| `src/lib/components/chat/MessageInput.svelte` | Enable the cascading selector and bind chat params; model selection clears the transient @model override. Remove the separate Effort dropdown. |
+| `src/lib/components/chat/ModelSelector.svelte` | Add an opt-in custom selector mount; reuse existing pin/default persistence, available model store and multiple-model permissions. Other callers keep the native selector. |
+| `src/lib/components/common/Dropdown.svelte` | Reposition on width changes as well as height changes, keeping the second menu panel inside the viewport. Existing visual-viewport handling covers the mobile keyboard. |
+| `src/lib/components/chat/Messages/CodeBlock.svelte` | Mount custom Shiki presentation and an edit/done toggle. Default to highlighted reading; the existing CodeEditor, copy/save/run, collapse and diagram paths remain. |
+| `src/lib/components/common/InterfaceSettings.svelte` | Mount `code/components/CodeStyleSettings.svelte` using existing current settings and persistence callbacks, for both personal and admin-default interface settings. |
+| `src/lib/stores/index.ts` | Type the persisted `kakamCodeTheme` preference, with invalid or missing values resolved to GitHub by the custom module. |
+
+The capsule combines model name and current effort. The desktop menu has adjacent
+model/effort panels; below 640px it becomes a single panel with a back action.
+Search includes names, IDs and descriptions; hidden models stay hidden, pinned
+models sort first. Comparison mode keeps per-model effort selections and supports
+removal without clearing the other models. Arrow keys navigate, Right opens effort,
+Left returns to models, and Escape closes the active level. Selection still uses
+the existing conservative capability and request serialization policy.
+
+Code styles: GitHub, VS Code, Catppuccin and Minimal, each paired for light/dark.
+Rendering reuses Shiki's lazy singleton and locally bundled languages/themes;
+no CDN or external highlighting requests. Streaming updates are coalesced for
+100ms with escaped plain text visible while loading. Unknown languages, load
+failures and code beyond 40,000 characters or 1,000 lines stay readable as plain
+text. An in-memory cache is bounded to 24 results / one million source+HTML
+characters. Raw code is never treated as HTML; only Shiki's escaped serialization
+is mounted. This preference affects chat display, not the editing surface or
+upstream file/notebook previews.
+
+The project-owned stylesheet removes composer border/outline highlighting and
+widens the model capsule; buttons retain visible keyboard focus styling. The
+previous standalone Effort component and Highlight.js color overrides were
+removed after their callers switched to the new modules.

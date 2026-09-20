@@ -1,5 +1,7 @@
 <script lang="ts">
-	import hljs from 'highlight.js';
+	import CodeHighlight from '$lib/kakam/code/components/CodeHighlight.svelte';
+	import CodeModeButton from '$lib/kakam/code/components/CodeModeButton.svelte';
+	let editing = false;
 	import { toast } from 'svelte-sonner';
 	import { getContext, onMount, tick, onDestroy } from 'svelte';
 	import { config, pyodideWorker as pyodideWorkerStore } from '$lib/stores';
@@ -14,7 +16,6 @@
 		unescapeHtml
 	} from '$lib/utils';
 
-	import 'highlight.js/styles/github-dark.min.css';
 	import equal from 'fast-deep-equal';
 
 	import CodeEditor from '$lib/components/common/CodeEditor.svelte';
@@ -505,6 +506,8 @@
 						{/if}
 					{/if}
 
+					{#if edit}<CodeModeButton bind:editing onFinish={saveCode} />{/if}
+
 					{#if save}
 						<button
 							class="save-code-button bg-none border-none transition rounded-md px-1.5 py-0.5 bg-white dark:bg-black"
@@ -542,7 +545,7 @@
 				<div class="kakam-code-spacer pt-6.5 bg-white dark:bg-black"></div>
 
 				{#if !collapsed}
-					{#if edit}
+					{#if edit && editing}
 						<CodeEditor
 							value={code}
 							{id}
@@ -555,19 +558,7 @@
 							}}
 						/>
 					{:else}
-						<pre
-							class=" hljs p-4 px-5 overflow-x-auto"
-							style="border-top-left-radius: 0px; border-top-right-radius: 0px; {(executing ||
-								stdout ||
-								stderr ||
-								result) &&
-								'border-bottom-left-radius: 0px; border-bottom-right-radius: 0px;'}"><code
-								class="language-{lang} rounded-t-none whitespace-pre text-sm"
-								>{#if lang && hljs.getLanguage(lang)}{@html hljs.highlight(code, {
-										language: lang,
-										ignoreIllegals: true
-									}).value}{:else}{code}{/if}</code
-							></pre>
+						<CodeHighlight {code} language={lang} />
 					{/if}
 				{:else}
 					<div

@@ -215,6 +215,7 @@ type OllamaModelDetails = {
 };
 
 type Settings = {
+	kakamCodeTheme?: import('$lib/kakam/code/themes').CodeTheme;
 	kakamMemory?: import('$lib/kakam/memory/types').MemoryPreferences;
 	pinnedModels?: string[];
 	toolServers?: never[];

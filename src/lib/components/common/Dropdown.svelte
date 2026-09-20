@@ -37,6 +37,7 @@
 	let settleTimers: number[] = [];
 	let resolvedMaxHeight = maxHeight;
 	let lastContentHeight = 0;
+	let lastContentWidth = 0;
 
 	/** Svelte action: moves the node to document.body and keeps it positioned as it resizes */
 	function portal(node: HTMLElement) {
@@ -47,8 +48,9 @@
 		// viewport. Compare scrollHeight (the natural content height) so that clamping
 		// max-height here cannot feed back into another reposition.
 		const resizeObserver = new ResizeObserver(() => {
-			if (node.scrollHeight === lastContentHeight) return;
+			if (node.scrollHeight === lastContentHeight && node.offsetWidth === lastContentWidth) return;
 			lastContentHeight = node.scrollHeight;
+			lastContentWidth = node.offsetWidth;
 			schedulePositionUpdate();
 		});
 		resizeObserver.observe(node);
@@ -57,6 +59,7 @@
 			destroy() {
 				resizeObserver.disconnect();
 				lastContentHeight = 0;
+				lastContentWidth = 0;
 				if (node.parentNode) {
 					node.parentNode.removeChild(node);
 				}
