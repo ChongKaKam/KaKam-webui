@@ -302,7 +302,7 @@
 					</div>
 				{/if}
 
-				{#if cloudUi.ollamaConnections}
+				{#if cloudUi.ollamaConnections && ENABLE_OLLAMA_API !== null}
 				<AdminSettingRow label={$i18n.t('Ollama API')} let:labelId>
 					<Switch
 						bind:state={ENABLE_OLLAMA_API}
