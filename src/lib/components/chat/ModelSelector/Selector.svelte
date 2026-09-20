@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { cloudUi } from '$lib/kakam/shared/cloud-ui';
 	import { marked } from 'marked';
 	import Fuse from 'fuse.js';
 
@@ -197,7 +198,7 @@
 		if (show) {
 			searchValue = '';
 			listScrollTop = 0;
-			if (!selectionOnly) {
+			if (!selectionOnly && cloudUi.localModelManagement) {
 				setOllamaVersion();
 				setProviderDownloadConnections();
 			}
@@ -371,7 +372,7 @@
 
 	$: sanitizedSearchValue = searchValue.trim();
 	$: downloadTargets =
-		!selectionOnly && sanitizedSearchValue && $user?.role === 'admin'
+		cloudUi.localModelManagement && !selectionOnly && sanitizedSearchValue && $user?.role === 'admin'
 			? [
 					...(ollamaVersion
 						? [
@@ -1282,7 +1283,7 @@
 							{/if}
 						{/each}
 
-						{#each selectionOnly ? [] : Object.keys($MODEL_DOWNLOAD_POOL).filter((model) => !activeDownloadKeys.has(model)) as model}
+						{#each selectionOnly || !cloudUi.localModelManagement ? [] : Object.keys($MODEL_DOWNLOAD_POOL).filter((model) => !activeDownloadKeys.has(model)) as model}
 							{@const download = $MODEL_DOWNLOAD_POOL[model]}
 							{@const downloadName = download?.model ?? model}
 							<Tooltip

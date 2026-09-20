@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { cloudUi } from '$lib/kakam/shared/cloud-ui';
 	import { toast } from 'svelte-sonner';
 	import { createEventDispatcher, onMount, getContext } from 'svelte';
 
@@ -91,7 +92,7 @@
 	};
 
 	const updateOllamaHandler = async () => {
-		if (ENABLE_OLLAMA_API !== null) {
+		if (cloudUi.ollamaConnections && ENABLE_OLLAMA_API !== null) {
 			// Remove trailing slashes
 			OLLAMA_BASE_URLS = OLLAMA_BASE_URLS.map((url) => url.replace(/\/$/, ''));
 
@@ -160,7 +161,9 @@
 
 			await Promise.all([
 				(async () => {
-					ollamaConfig = await getOllamaConfig(localStorage.token);
+					if (cloudUi.ollamaConnections) {
+						ollamaConfig = await getOllamaConfig(localStorage.token);
+					}
 				})(),
 				(async () => {
 					openaiConfig = await getOpenAIConfig(localStorage.token);
@@ -171,14 +174,14 @@
 			]);
 
 			ENABLE_OPENAI_API = openaiConfig.ENABLE_OPENAI_API;
-			ENABLE_OLLAMA_API = ollamaConfig.ENABLE_OLLAMA_API;
+			ENABLE_OLLAMA_API = ollamaConfig.ENABLE_OLLAMA_API ?? null;
 
 			OPENAI_API_BASE_URLS = openaiConfig.OPENAI_API_BASE_URLS;
 			OPENAI_API_KEYS = openaiConfig.OPENAI_API_KEYS;
 			OPENAI_API_CONFIGS = openaiConfig.OPENAI_API_CONFIGS;
 
-			OLLAMA_BASE_URLS = ollamaConfig.OLLAMA_BASE_URLS;
-			OLLAMA_API_CONFIGS = ollamaConfig.OLLAMA_API_CONFIGS;
+			OLLAMA_BASE_URLS = ollamaConfig.OLLAMA_BASE_URLS ?? [];
+			OLLAMA_API_CONFIGS = ollamaConfig.OLLAMA_API_CONFIGS ?? {};
 
 			if (ENABLE_OPENAI_API) {
 				// get url and idx
@@ -226,17 +229,19 @@
 	onSubmit={addOpenAIConnectionHandler}
 />
 
+{#if cloudUi.ollamaConnections}
 <AddConnectionModal
 	ollama
 	bind:show={showAddOllamaConnectionModal}
 	onSubmit={addOllamaConnectionHandler}
 />
+{/if}
 
 <form class="flex h-full flex-col justify-between text-sm" on:submit|preventDefault={submitHandler}>
 	<h2 class="text-sm font-medium text-gray-900 dark:text-white mb-4">{$i18n.t('Connections')}</h2>
 
 	<div class="flex-1 min-h-0 overflow-y-auto scrollbar-hover pr-1.5">
-		{#if ENABLE_OPENAI_API !== null && ENABLE_OLLAMA_API !== null && connectionsConfig !== null}
+		{#if ENABLE_OPENAI_API !== null && (!cloudUi.ollamaConnections || ENABLE_OLLAMA_API !== null) && connectionsConfig !== null}
 			<AdminSettingSection first>
 				<AdminSettingRow label={$i18n.t('OpenAI API')} let:labelId>
 					<Switch
@@ -297,6 +302,7 @@
 					</div>
 				{/if}
 
+				{#if cloudUi.ollamaConnections}
 				<AdminSettingRow label={$i18n.t('Ollama API')} let:labelId>
 					<Switch
 						bind:state={ENABLE_OLLAMA_API}
@@ -361,6 +367,7 @@
 							</a>
 						</div>
 					</div>
+				{/if}
 				{/if}
 			</AdminSettingSection>
 

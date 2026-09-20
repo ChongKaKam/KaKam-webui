@@ -1,4 +1,5 @@
 <script lang="ts">
+	import MemorySidebarItem from '$lib/kakam/memory/components/MemorySidebarItem.svelte';
 	import { toast } from 'svelte-sonner';
 	import { v4 as uuidv4 } from 'uuid';
 	import Sortable from 'sortablejs';
@@ -1025,6 +1026,8 @@
 						</Tooltip>
 					</div>
 
+					<MemorySidebarItem compact />
+
 					{#each pinnedItems as itemId (itemId)}
 						{@const meta = getMenuItemMeta(itemId)}
 						{#if meta && isMenuItemVisible(itemId)}
@@ -1249,6 +1252,8 @@
 								<HotkeyHint name="search" className=" hover-reveal " />
 							</button>
 						</div>
+
+						<MemorySidebarItem />
 
 						<div id="pinned-menu-items-list">
 							{#each pinnedItems as itemId (itemId)}

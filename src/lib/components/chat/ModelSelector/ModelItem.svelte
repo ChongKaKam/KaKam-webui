@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { cloudUi } from '$lib/kakam/shared/cloud-ui';
 	import { marked } from 'marked';
 
 	import { getContext, tick } from 'svelte';
@@ -276,7 +277,7 @@
 	</div>
 
 	<div class="ml-auto flex shrink-0 items-center gap-1.5 pl-2">
-		{#if !selectionOnly && $user?.role === 'admin' && item.model.loaded}
+		{#if cloudUi.localModelManagement && !selectionOnly && $user?.role === 'admin' && item.model.loaded}
 			<Tooltip
 				content={`${$i18n.t('Eject')}`}
 				className="flex-shrink-0 group-hover/item:opacity-100 opacity-0 "

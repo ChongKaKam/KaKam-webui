@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { cloudUi } from '$lib/kakam/shared/cloud-ui';
 	import Switch from '$lib/components/common/Switch.svelte';
 	import Textarea from '$lib/components/common/Textarea.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
@@ -783,6 +784,7 @@
 		{/if}
 	</div>
 
+	{#if cloudUi.localInferenceParams}
 	<div class=" py-0.5 w-full justify-between">
 		<Tooltip
 			content={$i18n.t('Enable Mirostat sampling for controlling perplexity.')}
@@ -1283,7 +1285,9 @@
 		{/if}
 	</div>
 
+	{/if}
 	{#if admin}
+		{#if cloudUi.localInferenceParams}
 		<div class=" py-0.5 w-full justify-between">
 			<Tooltip
 				content={$i18n.t(
@@ -1393,6 +1397,7 @@
 			{/if}
 		</div>
 
+		{/if}
 		{#if custom && admin}
 			<div class="flex flex-col justify-center">
 				{#each Object.keys(params?.custom_params ?? {}) as key}

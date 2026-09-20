@@ -41,3 +41,32 @@ Prompt previews use the existing pre-inference hook and a project-owned, bounded
 The custom BFF authenticates each preview read and rechecks chat ownership;
 System text is restricted to administrators. No raw preview text in socket events
 or chat metadata, no new database tables, no upstream Drawer/Modal modifications.
+
+## KaKam Cloud UI
+
+Presentation policy: `src/lib/kakam/shared/cloud-ui.ts`. Cloud mode hides local
+inference management (Ollama, llama.cpp and LM Studio download/unload controls)
+while retaining ordinary model selection, pinning, cloud connections, model
+configuration import/export, and all backend APIs. No saved configuration or
+parameter values are deleted or migrated. This is UI policy, not authorization.
+
+| Upstream file | Reason / behavior delegated to custom modules |
+| --- | --- |
+| `src/lib/components/layout/Sidebar.svelte` | Mount `memory/components/MemorySidebarItem.svelte` in expanded and compact navigation. Reuse Memory Policy permissions and settings navigation; close the mobile sidebar after opening settings. Existing avatar menu entry remains. |
+| `src/lib/components/admin/Settings/Connections.svelte` | Gate Ollama controls and add/manage mounts using Cloud UI policy. Skip hidden Ollama config reads and writes; cloud settings loading does not depend on Ollama config. |
+| `src/lib/components/admin/Settings/Models.svelte` | Gate the local inference Manage button and modal mount, preserving normal model configuration and import/export. |
+| `src/lib/components/chat/ModelSelector/Selector.svelte` | Gate local management discovery, download targets and queued-download rows. Preserve cloud connection guidance and model selection. |
+| `src/lib/components/chat/ModelSelector/ModelItem.svelte` | Gate local model unload action. |
+| `src/lib/components/chat/ModelSelector/ModelItemMenu.svelte` | Gate local model deletion action; keep edit, pinning and links. |
+| `src/lib/components/chat/Settings/Advanced/AdvancedParams.svelte` | Gate local inference controls centrally for every caller; retain shared sampling, reasoning, streaming and custom parameters. |
+
+Hidden parameter controls: `mirostat`, `mirostat_eta`, `mirostat_tau`,
+`repeat_last_n`, `tfs_z`, `repeat_penalty`, `use_mmap`, `use_mlock`, Ollama
+`think`/`format`, `num_keep`, `num_ctx`, `num_batch`, `num_thread`, `num_gpu`,
+and `keep_alive`. Existing values remain untouched. `top_k`, `top_p`, `min_p`,
+temperature and the custom parameter editor remain available for compatible
+providers.
+
+UI rollback: set the three Cloud UI policy fields to `true` and rebuild the
+frontend. This does not change server-side provider enablement. About, document
+embedding configuration and Ollama Cloud web search are outside this UI slice.

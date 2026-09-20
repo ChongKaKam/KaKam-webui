@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { cloudUi } from '$lib/kakam/shared/cloud-ui';
 	import { marked } from 'marked';
 	import Sortable from 'sortablejs';
 	import fileSaver from 'file-saver';
@@ -694,7 +695,9 @@
 	}}
 />
 
-<ManageModelsModal bind:show={showManageModal} />
+{#if cloudUi.localModelManagement}
+	<ManageModelsModal bind:show={showManageModal} />
+{/if}
 
 {#if models !== null}
 	{#if selectedModelId === null}
@@ -845,6 +848,7 @@
 										</button>
 									{/if}
 
+									{#if cloudUi.localModelManagement}
 									<button
 										class="flex h-[1.6875rem] w-full cursor-pointer select-none items-center gap-2 rounded-xl bg-transparent px-2 text-[0.8125rem] hover:text-gray-900 dark:hover:text-gray-100"
 										type="button"
@@ -855,6 +859,7 @@
 										<Wrench className="size-3.5" />
 										<div class="flex items-center">{$i18n.t('Manage')}</div>
 									</button>
+									{/if}
 
 									<button
 										class="flex h-[1.6875rem] w-full cursor-pointer select-none items-center gap-2 rounded-xl bg-transparent px-2 text-[0.8125rem] hover:text-gray-900 dark:hover:text-gray-100"
