@@ -1,0 +1,327 @@
+/* KaKam presentation layer. Keep selectors scoped to explicit integration mounts. */
+:root {
+	--kakam-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+	--kakam-border: rgb(128 128 128 / 0.17);
+	--kakam-surface: #f7f7f8;
+	--kakam-text: #242424;
+	--kakam-muted: #646464;
+}
+.dark {
+	--kakam-surface: #252525;
+	--kakam-text: #ececec;
+	--kakam-muted: #aaa;
+}
+body {
+	font-family:
+		var(--app-font-family, 'Inter'),
+		-apple-system,
+		BlinkMacSystemFont,
+		'Segoe UI',
+		'PingFang SC',
+		'Microsoft YaHei',
+		sans-serif;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+.kakam-chat .markdown-prose {
+	font-size: 1rem !important;
+	line-height: 1.8;
+	color: var(--kakam-text);
+}
+.kakam-chat .markdown-prose p {
+	line-height: 1.8;
+	margin-bottom: 1rem;
+}
+.kakam-chat .markdown-prose :is(h1, h2, h3, h4) {
+	font-weight: 600;
+	line-height: 1.4;
+	margin-top: 1.5rem;
+	margin-bottom: 0.65rem;
+	letter-spacing: -0.015em;
+}
+.kakam-chat .markdown-prose h1 {
+	font-size: 1.6rem;
+}
+.kakam-chat .markdown-prose h2 {
+	font-size: 1.3rem;
+}
+.kakam-chat .markdown-prose li {
+	margin-block: 0.4rem;
+}
+.kakam-chat .markdown-prose strong {
+	font-weight: 600;
+}
+.kakam-chat .codespan {
+	font-family: var(--kakam-mono);
+	padding: 0.15em 0.35em;
+}
+.kakam-composer #message-input-container {
+	background: var(--kakam-surface);
+	border-color: var(--kakam-border);
+	box-shadow: 0 3px 16px rgb(0 0 0 / 0.035);
+}
+.kakam-composer #chat-input {
+	font-size: 1rem !important;
+	line-height: 1.6;
+}
+.kakam-composer .kakam-composer-toolbar {
+	align-items: flex-end;
+	gap: 0.25rem;
+}
+.kakam-composer .kakam-composer-actions {
+	align-items: center;
+	gap: 0.25rem;
+}
+.kakam-composer .kakam-model-slot {
+	max-width: 12rem;
+}
+.kakam-codeblock {
+	min-width: 0;
+	border-color: var(--kakam-border);
+	background: var(--kakam-surface);
+	margin-block: 1.25rem;
+}
+.kakam-codeblock .kakam-code-toolbar {
+	min-height: 2.75rem;
+	background: var(--kakam-surface);
+	color: var(--kakam-muted);
+	border-bottom: 1px solid var(--kakam-border);
+}
+.kakam-code-toolbar button {
+	background: transparent;
+	min-height: 2rem;
+	padding-inline: 0.5rem;
+	border-radius: 0.5rem;
+}
+.kakam-code-toolbar button:hover {
+	background: rgb(128 128 128 / 0.12);
+	color: var(--kakam-text);
+}
+.kakam-codeblock .kakam-code-content {
+	margin-top: 0;
+	border-top-left-radius: 0;
+	border-top-right-radius: 0;
+}
+.kakam-code-content > .kakam-code-spacer {
+	display: none;
+}
+.kakam-codeblock pre.hljs {
+	margin: 0;
+	padding: 1.25rem;
+	background: var(--kakam-surface);
+	color: var(--kakam-text);
+	tab-size: 4;
+}
+.kakam-codeblock pre code {
+	font-family: var(--kakam-mono);
+	font-size: 0.875rem;
+	line-height: 1.7;
+	white-space: pre;
+	display: block;
+}
+.kakam-codeblock pre.hljs [class^='hljs-'] {
+	color: inherit;
+}
+.kakam-codeblock pre.hljs .hljs-keyword,
+.kakam-codeblock pre.hljs .hljs-selector-tag {
+	color: #a626a4;
+}
+.kakam-codeblock pre.hljs .hljs-string,
+.kakam-codeblock pre.hljs .hljs-attr {
+	color: #287a3f;
+}
+.kakam-codeblock pre.hljs .hljs-title,
+.kakam-codeblock pre.hljs .hljs-type,
+.kakam-codeblock pre.hljs .hljs-variable,
+.kakam-codeblock pre.hljs .hljs-symbol,
+.kakam-codeblock pre.hljs .hljs-meta,
+.kakam-codeblock pre.hljs .hljs-built_in {
+	color: #2864b4;
+}
+.kakam-codeblock pre.hljs .hljs-number,
+.kakam-codeblock pre.hljs .hljs-literal {
+	color: #a04e08;
+}
+.kakam-codeblock pre.hljs .hljs-comment {
+	color: #727272;
+}
+.dark .kakam-codeblock pre.hljs .hljs-keyword,
+.dark .kakam-codeblock pre.hljs .hljs-selector-tag {
+	color: #dba5ef;
+}
+.dark .kakam-codeblock pre.hljs .hljs-string,
+.dark .kakam-codeblock pre.hljs .hljs-attr {
+	color: #a5d6a7;
+}
+.dark .kakam-codeblock pre.hljs .hljs-title,
+.dark .kakam-codeblock pre.hljs .hljs-type,
+.dark .kakam-codeblock pre.hljs .hljs-variable,
+.dark .kakam-codeblock pre.hljs .hljs-symbol,
+.dark .kakam-codeblock pre.hljs .hljs-meta,
+.dark .kakam-codeblock pre.hljs .hljs-built_in {
+	color: #91caff;
+}
+.dark .kakam-codeblock pre.hljs .hljs-number,
+.dark .kakam-codeblock pre.hljs .hljs-literal {
+	color: #f0bd8b;
+}
+.dark .kakam-codeblock pre.hljs .hljs-comment {
+	color: #a0a0a0;
+}
+.kakam-settings #settings-tabs-container {
+	background: var(--kakam-surface);
+	padding: 0.75rem 0.5rem;
+	border-color: var(--kakam-border);
+}
+.kakam-settings [role='tab'] {
+	min-height: 2.5rem;
+	height: auto;
+	padding: 0.5rem 0.75rem;
+	font-size: 0.875rem;
+	gap: 0.6rem;
+	border-radius: 0.75rem;
+}
+.kakam-settings [role='tab'][aria-selected='true'] {
+	background: rgb(128 128 128 / 0.12);
+	color: var(--kakam-text);
+	font-weight: 600;
+}
+.kakam-settings .kakam-settings-group {
+	font-size: 0.6875rem;
+	font-weight: 600;
+	color: var(--kakam-muted);
+	letter-spacing: 0.04em;
+	margin-top: 1.25rem;
+	margin-bottom: 0.4rem;
+}
+.kakam-settings .kakam-settings-content {
+	padding: 1.75rem 2rem;
+}
+.kakam-settings-content h2 {
+	font-size: 1.25rem;
+	font-weight: 600;
+	letter-spacing: -0.025em;
+	margin-bottom: 1.25rem;
+}
+.kakam-settings-content section h3 {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--kakam-text);
+	margin-bottom: 0.875rem;
+}
+.kakam-settings-content section + section {
+	margin-top: 1.75rem;
+	padding-top: 1.5rem;
+	border-top: 1px solid var(--kakam-border);
+}
+.kakam-settings-content .kakam-settings-breadcrumb {
+	color: var(--kakam-muted);
+	font-size: 0.75rem;
+	margin-bottom: 0.6rem;
+}
+
+@media (max-width: 767px) {
+	.kakam-chat {
+		padding-top: env(safe-area-inset-top, 0px);
+		padding-left: env(safe-area-inset-left, 0px);
+		padding-right: env(safe-area-inset-right, 0px);
+	}
+	.kakam-composer {
+		padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+	}
+	.kakam-composer #message-input-container {
+		border-radius: 1.5rem;
+	}
+	.kakam-composer .kakam-composer-toolbar {
+		flex-wrap: wrap;
+	}
+	.kakam-composer .kakam-composer-toolbar > :first-child {
+		flex: 0 0 auto;
+	}
+	.kakam-composer .kakam-composer-actions {
+		margin-left: auto;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+	}
+	.kakam-composer .kakam-model-slot {
+		max-width: min(9rem, 33vw);
+	}
+	.kakam-composer
+		:is(
+			#input-menu-button,
+			#integration-menu-button,
+			#send-message-button,
+			#voice-input-button,
+			#model-selector-model-button
+		) {
+		min-height: 2.75rem;
+	}
+	.kakam-composer :is(#input-menu-button, #send-message-button) {
+		min-width: 2.75rem;
+	}
+	.kakam-code-toolbar {
+		flex-wrap: wrap;
+		padding: 0.5rem 0.75rem;
+	}
+	.kakam-code-toolbar button {
+		min-height: 2.5rem;
+	}
+	.kakam-codeblock pre.hljs {
+		padding: 1rem;
+	}
+	.kakam-settings-shell {
+		padding: max(0.5rem, env(safe-area-inset-top, 0px)) max(0.5rem, env(safe-area-inset-right, 0px))
+			max(0.5rem, env(safe-area-inset-bottom, 0px)) max(0.5rem, env(safe-area-inset-left, 0px)) !important;
+	}
+	.kakam-settings {
+		width: 100% !important;
+		max-height: calc(
+			100dvh - max(0.5rem, env(safe-area-inset-top, 0px)) -
+				max(0.5rem, env(safe-area-inset-bottom, 0px))
+		) !important;
+		height: 100%;
+		border-radius: 1.5rem;
+	}
+	.kakam-settings #settings-tabs-container {
+		flex-direction: column;
+		padding: 0.25rem;
+	}
+	.kakam-settings .kakam-settings-content {
+		padding: 1.25rem 1rem;
+	}
+	.kakam-settings :is(input:not([type='range']):not([type='checkbox']), textarea, select) {
+		font-size: 1rem;
+	}
+	#sidebar {
+		padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+		padding-top: env(safe-area-inset-top, 0px);
+		padding-left: env(safe-area-inset-left, 0px);
+	}
+}
+/* Landscape phones can exceed the desktop breakpoint but still have a notch. */
+@media (pointer: coarse) {
+	.kakam-chat {
+		padding-top: env(safe-area-inset-top, 0px);
+		padding-left: env(safe-area-inset-left, 0px);
+		padding-right: env(safe-area-inset-right, 0px);
+	}
+	.kakam-composer {
+		padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+	}
+	.kakam-settings-shell {
+		padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
+		padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
+	}
+	#sidebar {
+		padding-left: env(safe-area-inset-left, 0px);
+		padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.kakam-composer *,
+	.kakam-settings *,
+	.kakam-codeblock * {
+		scroll-behavior: auto;
+		transition-duration: 0.01ms;
+	}
+}

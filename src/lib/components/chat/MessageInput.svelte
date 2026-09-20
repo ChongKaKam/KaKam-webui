@@ -1,4 +1,7 @@
 <script lang="ts">
+	import EffortSelector from '$lib/kakam/chat/components/EffortSelector.svelte';
+	import type { ChatParams } from '$lib/kakam/chat/effort';
+	export let params: ChatParams = {};
 	import DOMPurify from 'dompurify';
 	import { toast } from 'svelte-sonner';
 
@@ -1632,7 +1635,7 @@
 />
 
 {#if loaded}
-	<div class="w-full">
+	<div class="kakam-composer w-full">
 		<div class=" mx-auto inset-x-0 bg-transparent flex justify-center">
 			<div
 				class="flex flex-col px-3 {($settings?.widescreenMode ?? null)
@@ -2178,7 +2181,7 @@
 								</div>
 							</div>
 
-							<div class=" flex justify-between mt-0.5 mb-2 mx-0.5 max-w-full" dir="ltr">
+							<div class="kakam-composer-toolbar flex justify-between mt-0.5 mb-2 mx-0.5 max-w-full" dir="ltr">
 								<div class="ml-1 self-end flex items-center flex-1 min-w-0">
 									<InputMenu
 										bind:files
@@ -2519,8 +2522,8 @@
 									</div>
 								</div>
 
-								<div class="self-end flex space-x-1 mr-1 min-w-0 gap-[0.03125rem]">
-									<div class="flex min-w-0 max-w-[10rem] items-center sm:max-w-[13rem]">
+								<div class="kakam-composer-actions self-end flex space-x-1 mr-1 min-w-0 gap-[0.03125rem]">
+									<div class="kakam-model-slot flex min-w-0 max-w-[10rem] items-center sm:max-w-[13rem]">
 										<ModelSelector
 											bind:this={modelSelector}
 											bind:selectedModels
@@ -2530,6 +2533,8 @@
 											triggerClassName="items-center gap-1.5 rounded-lg pl-2 pr-1.5 py-1 text-[0.8125rem] font-normal text-gray-600 transition-colors duration-100 hover:bg-gray-50/40 hover:text-gray-700 dark:text-gray-300 dark:hover:bg-gray-800/40 dark:hover:text-gray-200"
 										/>
 									</div>
+
+									<EffortSelector modelIds={selectedModelIds} bind:params disabled={generating} />
 
 									{#if hasChatVariables}
 										<Tooltip content={$i18n.t('Chat Variables')} placement="top">

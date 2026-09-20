@@ -33,6 +33,7 @@ from open_webui.utils.filter import (
 )
 from open_webui.utils.json_codec import JSONCodec
 from open_webui.utils.models import check_model_access, get_all_models
+from open_webui.kakam.chat.effort import apply_effort_override
 from open_webui.utils.payload import convert_payload_openai_to_ollama
 from open_webui.utils.response import (
     convert_response_ollama_to_openai,
@@ -53,6 +54,7 @@ async def generate_direct_chat_completion(
     models: dict,
 ):
     log.info('generate_direct_chat_completion')
+    apply_effort_override(form_data)
 
     metadata = form_data.pop('metadata', {})
 
@@ -280,6 +282,7 @@ async def generate_chat_completion(
                 }
 
         if model.get('pipe'):
+            apply_effort_override(form_data)
             # Below does not require bypass_filter because this is the only route the uses this function and it is already bypassing the filter
             return await generate_function_chat_completion(request, form_data, user=user, models=models)
         if model.get('owned_by') == 'ollama':

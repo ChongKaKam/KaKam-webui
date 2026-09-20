@@ -61,14 +61,14 @@
 	});
 </script>
 
-<section aria-label="记忆占比活动" class="space-y-4">
+<section aria-label="记忆占比活动" class="memory-activity space-y-6">
 	<div class="flex flex-wrap items-center justify-between gap-3">
-		<h3 class="text-xs font-medium text-gray-900 dark:text-white">记忆占比</h3>
+		<h3 class="text-base font-semibold text-gray-900 dark:text-white">记忆占比</h3>
 		<div class="flex items-center gap-3 text-xs text-gray-500">
 			<label class="flex items-center gap-2"
 				>统计周期
 				<select
-					class="rounded-lg bg-gray-50 px-2 py-1 dark:bg-gray-850"
+					class="min-h-10 rounded-xl border border-gray-200/60 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-850"
 					bind:value={days}
 					on:change={load}
 				>
@@ -93,7 +93,7 @@
 			<button type="button" class="underline" on:click={load}>重试</button>
 		</div>
 	{:else if activity}
-		<div class="flex flex-wrap items-center justify-between gap-2 text-[0.6875rem] text-gray-500">
+		<div class="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
 			<span
 				>{selectedDate ?? `最近 ${activity.days} 天`} · {requests.toLocaleString()} 次已记录请求 · {total.toLocaleString()}
 				字符</span
@@ -104,17 +104,21 @@
 					on:click={() => (selectedDate = null)}>返回整个周期</button
 				>{/if}
 		</div>
-		<div class="grid grid-cols-2 gap-x-6 gap-y-3 md:grid-cols-4">
+		<div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
 			{#each shares as segment}
-				<div>
-					<div class="text-lg font-medium tabular-nums text-gray-900 dark:text-white">
+				<div
+					class="rounded-2xl border border-gray-200/60 bg-gray-50/70 p-4 dark:border-gray-700/50 dark:bg-white/[0.025]"
+				>
+					<div
+						class="text-3xl font-semibold tracking-tight tabular-nums text-gray-900 dark:text-white"
+					>
 						{total ? `${segment.percent.toFixed(1)}%` : '—'}
 					</div>
-					<div class="mt-1 flex items-center gap-1.5 text-[0.6875rem] text-gray-500">
+					<div class="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
 						<span class="size-2 rounded-sm" style:background={segmentColors[segment.kind]}
 						></span>{labels[segment.kind]}
 					</div>
-					<div class="mt-0.5 text-[0.6875rem] tabular-nums text-gray-400">
+					<div class="mt-0.5 text-xs tabular-nums text-gray-400">
 						{segment.characters.toLocaleString()} 字符
 					</div>
 				</div>
@@ -133,59 +137,63 @@
 		</div>
 		<div>
 			<div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-				<h4 class="text-xs text-gray-400 dark:text-gray-500">Memory 活动</h4>
-				<div class="flex flex-wrap gap-x-3 gap-y-2 text-[0.6875rem]">
+				<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Memory 活动</h4>
+				<div class="flex flex-wrap gap-1 text-xs">
 					{#each filters as kind}
 						<button
 							type="button"
 							aria-pressed={filter === kind}
 							class={filter === kind
-								? 'text-gray-900 dark:text-white'
-								: 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}
+								? 'rounded-lg bg-gray-100 px-3 py-2 text-gray-900 dark:bg-gray-800 dark:text-white'
+								: 'rounded-lg px-3 py-2 text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200'}
 							on:click={() => (filter = kind as SegmentKind | 'all')}
 							>{kind === 'all' ? '全部' : labels[kind]}</button
 						>
 					{/each}
 				</div>
 			</div>
+			<!-- Keyboard users need to focus this region to scroll the wide calendar. -->
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 			<div
-				class="calendar"
-				style:--columns={calendar.columns}
-				style:max-width={`${calendar.columns * 14 - 4}px`}
+				class="calendar-scroll"
+				tabindex="0"
+				role="region"
+				aria-label="Memory 活动日历，可横向滚动"
 			>
-				{#each calendar.cells as day}
-					{#if day}
-						{@const color = dayColor(day, filter)}
-						<Tooltip content={tooltip(day)}>
-							<button
-								type="button"
-								class="day bg-gray-100 dark:bg-gray-800"
-								class:selected={selectedDate === day.date}
-								aria-label={tooltip(day)}
-								aria-pressed={selectedDate === day.date}
-								style:background-color={color.color ?? undefined}
-								style:opacity={color.color ? color.opacity : 1}
-								on:click={() => (selectedDate = selectedDate === day.date ? null : day.date)}
-							></button>
-						</Tooltip>
-					{:else}<span></span>{/if}
-				{/each}
+				<div class="calendar-frame" style:--columns={calendar.columns}>
+					<div class="calendar">
+						{#each calendar.cells as day}
+							{#if day}
+								{@const color = dayColor(day, filter)}
+								<Tooltip content={tooltip(day)}>
+									<button
+										type="button"
+										class="day bg-gray-100 dark:bg-gray-800"
+										class:selected={selectedDate === day.date}
+										aria-label={tooltip(day)}
+										aria-pressed={selectedDate === day.date}
+										style:background-color={color.color ?? undefined}
+										style:opacity={color.color ? color.opacity : 1}
+										on:click={() => (selectedDate = selectedDate === day.date ? null : day.date)}
+									></button>
+								</Tooltip>
+							{:else}<span></span>{/if}
+						{/each}
+					</div>
+					<div
+						class="calendar-months mt-3 grid text-xs text-gray-500"
+						style:grid-template-columns={`repeat(${calendar.columns}, minmax(0, 1fr))`}
+						style:gap="var(--cell-gap)"
+					>
+						{#each calendar.months as month}<span
+								class="whitespace-nowrap"
+								style:grid-column={`${month.column + 1} / span ${Math.min(3, calendar.columns - month.column)}`}
+								>{month.label}</span
+							>{/each}
+					</div>
+				</div>
 			</div>
-			<div
-				class="mx-auto mt-2 grid text-[0.6875rem] text-gray-400"
-				style:max-width={`${calendar.columns * 14 - 4}px`}
-				style:grid-template-columns={`repeat(${calendar.columns}, minmax(0, 1fr))`}
-				style:gap="4px"
-			>
-				{#each calendar.months as month}<span
-						class="whitespace-nowrap"
-						style:grid-column={`${month.column + 1} / span ${Math.min(3, calendar.columns - month.column)}`}
-						>{month.label}</span
-					>{/each}
-			</div>
-			<div
-				class="mt-3 flex flex-wrap items-center justify-between gap-2 text-[0.6875rem] text-gray-400"
-			>
+			<div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-400">
 				<span>每格一天（UTC）· 点击查看当天占比</span>
 				<span>浅 → 深：{filter === 'all' ? '当天占比最高的类型' : labels[filter]}占比增大</span>
 			</div>
@@ -199,7 +207,7 @@
 		{#if activity.truncated}<p role="status" class="text-xs text-amber-600">
 				记录较多，本页只统计所选周期中最新 5000 条候选响应内的有效快照，不代表完整用量。
 			</p>{/if}
-		<p class="text-[0.6875rem] leading-relaxed text-gray-400">
+		<p class="text-xs leading-relaxed text-gray-400">
 			占比 = 各类文本字符数 ÷ 已记录 Prompt 总字符数，按文本量加权，非计费
 			Token。统计周期与长期记忆保留窗口独立；不含临时对话、图片、工具 schema 或供应商追加内容。
 		</p>
@@ -207,13 +215,30 @@
 </section>
 
 <style>
+	.calendar-scroll {
+		overflow-x: auto;
+		padding: 6px 3px 12px;
+		overscroll-behavior-x: contain;
+	}
+	.calendar-frame {
+		--cell-size: 24px;
+		--cell-gap: 6px;
+		width: calc(var(--columns) * (var(--cell-size) + var(--cell-gap)) - var(--cell-gap));
+		margin-inline: auto;
+	}
+	@media (max-width: 767px) {
+		.calendar-frame {
+			--cell-size: 30px;
+		}
+	}
+
 	.calendar {
 		display: grid;
 		grid-auto-flow: column;
-		grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
-		grid-template-rows: repeat(7, minmax(0, 1fr));
-		gap: 4px;
-		aspect-ratio: var(--columns) / 7;
+		grid-template-columns: repeat(var(--columns), var(--cell-size));
+		grid-template-rows: repeat(7, var(--cell-size));
+		gap: var(--cell-gap);
+
 		margin: 0 auto;
 		width: 100%;
 	}
@@ -221,7 +246,7 @@
 		display: block;
 		width: 100%;
 		height: 100%;
-		border-radius: 2px;
+		border-radius: 5px;
 		transition: opacity 0.15s;
 	}
 	.day:hover {

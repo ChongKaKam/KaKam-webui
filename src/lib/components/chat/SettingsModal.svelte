@@ -1,4 +1,5 @@
 <script lang="ts">
+	import MobileSettingsNav from '$lib/kakam/settings/components/MobileSettingsNav.svelte';
 	import MemoryPolicySettings from '$lib/kakam/memory/components/MemoryPolicySettings.svelte';
 	import { canAccessMemoryPolicy, memoryPolicyTab } from '$lib/kakam/memory/navigation';
 	import { browser } from '$app/environment';
@@ -175,7 +176,7 @@
 	const shouldShowSettingGroup = (tabIds: string[], index: number) =>
 		index === 0 || settingGroupTitle(tabIds[index]) !== settingGroupTitle(tabIds[index - 1]);
 	const settingGroupHeadingClass = (first: boolean) =>
-		`hidden md:block shrink-0 text-[0.625rem] text-gray-400 dark:text-gray-600 px-2 ${
+		`kakam-settings-group hidden md:block shrink-0 text-[0.625rem] text-gray-400 dark:text-gray-600 px-2 ${
 			first ? 'mt-0.5' : 'mt-2'
 		} mb-0.5`;
 
@@ -933,8 +934,8 @@
 
 <Modal
 	size="full"
-	containerClassName="p-4 sm:p-6 lg:p-8"
-	className="!w-[calc(100vw-2rem)] sm:!w-[calc(100vw-3rem)] lg:!w-[calc(100vw-4rem)] !max-w-[80rem] h-[min(max(54rem,80dvh),calc(100dvh-4rem))] max-h-[calc(100dvh-4rem)] flex flex-col md:flex-row bg-white dark:bg-gray-900 rounded-4xl overflow-hidden"
+	containerClassName="kakam-settings-shell p-4 sm:p-6 lg:p-8"
+	className="kakam-settings !w-[calc(100vw-2rem)] sm:!w-[calc(100vw-3rem)] lg:!w-[calc(100vw-4rem)] !max-w-[80rem] h-[min(max(54rem,80dvh),calc(100dvh-4rem))] max-h-[calc(100dvh-4rem)] flex flex-col md:flex-row bg-white dark:bg-gray-900 rounded-4xl overflow-hidden"
 	bind:show={modalShow}
 >
 	<nav
@@ -953,7 +954,7 @@
 		</button>
 
 		<div
-			class="hidden md:flex items-center gap-1.5 h-7 px-2 mx-1 mt-1 mb-0.5 shrink-0 rounded-lg text-xs bg-gray-50/70 dark:bg-white/[0.03]"
+			class="flex items-center gap-1.5 h-9 px-2 mx-1 mt-1 mb-0.5 shrink-0 rounded-lg text-xs bg-gray-50/70 dark:bg-white/[0.03]"
 		>
 			<div class="self-center rounded-l-xl bg-transparent">
 				<Search className="size-3.5" strokeWidth="1.5" />
@@ -969,8 +970,10 @@
 			/>
 		</div>
 
+		<MobileSettingsNav tabs={availableSettings.filter((tab) => filteredSettings.includes(tab.id))} bind:selectedTab />
+
 		<div
-			class="tabs scrollbar-none flex min-w-0 flex-1 min-h-0 overflow-x-auto md:overflow-x-hidden md:overflow-y-auto md:flex-col p-1 pl-0 md:pl-1 gap-px"
+			class="tabs scrollbar-none hidden md:flex min-w-0 flex-1 min-h-0 overflow-x-auto md:overflow-x-hidden md:overflow-y-auto md:flex-col p-1 pl-0 md:pl-1 gap-px"
 		>
 			<span
 				class="hidden md:block text-[0.625rem] text-gray-400 dark:text-gray-600 px-2 mt-1.5 mb-0.5"
@@ -1215,7 +1218,8 @@
 		</div>
 	</nav>
 
-	<div class="flex-1 min-w-0 min-h-0 p-4 md:px-5 flex flex-col">
+	<div class="kakam-settings-content flex-1 min-w-0 min-h-0 p-4 md:px-5 flex flex-col">
+		<div class="kakam-settings-breadcrumb">{$i18n.t(isAdminTab(selectedTab) ? 'Admin' : 'Personal')} / {$i18n.t(settingGroupTitle(selectedTab))}</div>
 		<div class="flex-1 min-h-0 overflow-hidden">
 			{#if selectedTab === 'general'}
 				<General

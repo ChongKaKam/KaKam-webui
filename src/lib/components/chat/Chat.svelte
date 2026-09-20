@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { effortRequest } from '$lib/kakam/chat/effort';
 	import PromptComposition from '$lib/kakam/memory/components/PromptComposition.svelte';
 	import { getComposition } from '$lib/kakam/memory/service';
 	import { v4 as uuidv4 } from 'uuid';
@@ -3556,11 +3557,7 @@
 				stream: stream,
 				model: model.id,
 				...(messages.length > 0 ? { messages } : {}),
-				params: {
-					...$settings?.params,
-					...params,
-					stop: getStopTokens()
-				},
+				...effortRequest(model, { ...$settings?.params, ...params, stop: getStopTokens() }),
 
 				files: (files?.length ?? 0) > 0 ? files : undefined,
 
@@ -4245,7 +4242,7 @@
 />
 
 <div
-	class="{embedded
+	class="kakam-chat {embedded
 		? 'h-full'
 		: 'h-screen max-h-[100dvh]'} transition-width duration-200 ease-in-out {$showSidebar &&
 	!embedded
@@ -4429,6 +4426,7 @@
 								>
 									<PromptComposition report={getComposition(history)} />
 									<MessageInput
+										bind:params
 										bind:this={messageInput}
 										{history}
 										{taskIds}
@@ -4521,6 +4519,7 @@
 								{/if}
 								<div id={embedded ? messageInputDropzoneId : undefined} class="pb-2 z-10">
 									<MessageInput
+										bind:params
 										bind:this={messageInput}
 										{history}
 										{taskIds}

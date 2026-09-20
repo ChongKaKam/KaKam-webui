@@ -46,6 +46,7 @@ from open_webui.utils.headers import get_custom_headers, include_user_info_heade
 from open_webui.utils.json_codec import JSONCodec
 from open_webui.utils.misc import convert_logit_bias_input_to_json
 from open_webui.utils.model_ids import strip_provider_model_prefix
+from open_webui.kakam.chat.effort import apply_effort_override, convert_effort_to_responses
 from open_webui.utils.payload import (
     apply_model_params_to_body_openai,
     apply_system_prompt_to_body,
@@ -1375,6 +1376,7 @@ def convert_to_responses_payload(payload: dict) -> dict:
         input_items.append({'type': 'message', 'role': role, 'content': content_parts})
 
     responses_payload = {**payload, 'input': input_items}
+    convert_effort_to_responses(responses_payload)
 
     # Forward previous_response_id when the middleware has set it
     # (only used when ENABLE_RESPONSES_API_STATEFUL is enabled).
@@ -1533,6 +1535,7 @@ async def generate_chat_completion(
 
     prefix_id = api_config.get('prefix_id', None)
     payload['model'] = strip_provider_model_prefix(payload['model'], prefix_id)
+    apply_effort_override(payload)
 
     # Add user info to the payload if the model is a pipeline
     if 'pipeline' in model and model.get('pipeline'):

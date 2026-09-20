@@ -70,3 +70,33 @@ providers.
 UI rollback: set the three Cloud UI policy fields to `true` and rebuild the
 frontend. This does not change server-side provider enablement. About, document
 embedding configuration and Ollama Cloud web search are outside this UI slice.
+
+## KaKam chat and settings refinement
+
+Presentation and capability logic live in `src/lib/kakam/shared/theme.css`,
+`src/lib/kakam/chat/`, and `src/lib/kakam/settings/`. Memory activity continues
+using the existing project-owned panel and API. No new production dependencies.
+
+| Upstream file | Reason / behavior delegated to custom modules |
+| --- | --- |
+| `src/routes/+layout.svelte` | Load the scoped KaKam presentation stylesheet after upstream styles. |
+| `src/app.html` | Allow pinch zoom while preserving `viewport-fit=cover` for iPhone safe areas. |
+| `src/lib/components/chat/Chat.svelte` | Add the chat style scope, bind existing per-chat params to both composer mounts, and delegate per-model Effort serialization to `chat/effort.ts`. |
+| `src/lib/components/chat/MessageInput.svelte` | Mount `chat/components/EffortSelector.svelte` between the model selector and send actions. Add toolbar style hooks for responsive layout. |
+| `src/lib/components/chat/Messages/CodeBlock.svelte` | Add four presentation hooks for code typography, contrast, spacing and toolbar; preserve highlighting, copying, collapse, execution and editing. |
+| `src/lib/components/chat/SettingsModal.svelte` | Add style scopes, group/breadcrumb hierarchy, mobile search and `settings/components/MobileSettingsNav.svelte`; feed it the existing permission-filtered tabs. |
+| `backend/open_webui/routers/openai.py` | Apply the private UI Effort override after saved model defaults, and map Chat Completions effort to Responses format through `kakam/chat/effort.py`. |
+| `backend/open_webui/utils/chat.py` | Consume the private UI override before direct-connection or function dispatch so custom fields never reach those consumers. |
+
+The composer is authoritative for Effort on UI chat requests. Unknown models
+show `none` and omit the provider parameter, even when old global/model defaults
+set it. Supported models default to `high`; only explicitly supported levels
+are selectable. `extra high` serializes as `xhigh`. Per-model selections persist
+with existing chat params. Metadata can override conservative built-in detection;
+see `src/lib/kakam/chat/README.md`. Requests without the private override retain
+upstream default handling. Responses requests use `reasoning.effort`.
+
+The stylesheet keeps the user's UI scale/font preference, adds readable chat/code
+spacing, larger settings targets, mobile wrapping, and safe-area padding. Safe-area
+behavior still requires a physical iPhone check; desktop viewport testing cannot
+simulate the notch or software keyboard fully.
