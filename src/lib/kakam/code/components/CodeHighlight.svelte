@@ -52,7 +52,7 @@
 		padding: 1.25rem;
 		overflow-x: auto;
 		tab-size: 4;
-		background: var(--kakam-surface);
+		background: var(--kakam-code-surface, #f3f3f3) !important;
 		color: var(--kakam-text);
 	}
 	.kakam-shiki :global(pre code) {

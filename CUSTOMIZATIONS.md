@@ -138,3 +138,37 @@ The project-owned stylesheet removes composer border/outline highlighting and
 widens the model capsule; buttons retain visible keyboard focus styling. The
 previous standalone Effort component and Highlight.js color overrides were
 removed after their callers switched to the new modules.
+
+## Context hand-off and compact code controls
+
+| Upstream file | Reason / behavior delegated to custom modules |
+| --- | --- |
+| `src/lib/components/chat/Chat.svelte` | Pass current history and per-chat params through the existing PromptComposition mount to the project-owned hand-off panel. No new persistence or chat mutation. |
+| `src/lib/components/chat/Messages/CodeBlock.svelte` | Replace the text toolbar with `code/components/CodeToolbar.svelte`. Reuse existing collapse, run, preview, copy and save callbacks; a single edit/save icon changes mode and Ctrl/Cmd-S returns to highlighted reading. |
+
+The model picker now uses one fixed-width, fixed-height viewport for both steps
+on desktop and mobile, opened by click/keyboard rather than hover. Back does not
+commit a model change; choosing an effort commits model and effort together.
+The popup scrolls when available vertical space is limited. Light code surfaces
+use a shared pale-gray background while dark themes keep their Shiki colors.
+Context matrix labels and captions are larger.
+
+Hand-off implementation lives in `src/lib/kakam/handoff/` and is mounted by the
+existing project-owned Context drawer. It defaults to the selected response's
+model, lets the user choose another available model, and uses the existing
+verified `/api/chat/completions` dispatcher, including model access checks and
+per-model effort policy. Requests do not carry parent/chat IDs, so they do not
+create a chat or trigger KaKam Memory recall/extraction. No new backend endpoint,
+dependency or database schema. Direct models use the active socket session.
+
+Input follows only the selected response's parent chain, including that response;
+it never merges sibling replies. It includes available, unrestricted long-term
+Memory preview text, never System preview text, image payloads or attachment
+files. Known hidden reasoning blocks are omitted. The initial objective and recent
+messages are bounded, with explicit notices for missing/truncated context. Expired
+Memory snapshots do not prevent conversation-only generation. The prompt treats
+source records as data and asks the model to distinguish verified work from plans.
+Generation is cancellable, has a three-minute client timeout, and retains the
+previous result on retry failure. Results are editable and remain only in the
+open drawer until copied or exported as Markdown; closing the drawer aborts the
+client request. UI validation uses mock responses rather than production chats.

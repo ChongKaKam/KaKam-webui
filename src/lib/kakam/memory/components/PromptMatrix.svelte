@@ -34,7 +34,7 @@
 					title={`${labels[cell.kind]} · ${cell.characters} 字符`}
 				></span>
 			{/each}
-			{#each Array(Math.max(0, 224 - matrix.cells.length)) as _}
+			{#each Array.from({ length: Math.max(0, 224 - matrix.cells.length) }, (_, index) => index) as index (index)}
 				<span class="cell empty"></span>
 			{/each}
 		</div>
@@ -52,8 +52,8 @@
 			{/each}
 		</div>
 		<div class="caption">
-			选中响应 · 每格 ≤ {matrix.unit} 字符 · 最近 {report.days} 天 / {report.memory_count} 条记忆
-			· 不含图片、工具 schema 及供应商追加内容；非账单 token 或供应商缓存统计
+			选中响应 · 每格 ≤ {matrix.unit} 字符 · 最近 {report.days} 天 / {report.memory_count} 条记忆 · 不含图片、工具
+			schema 及供应商追加内容；非账单 token 或供应商缓存统计
 		</div>
 	</section>
 {/if}
@@ -70,7 +70,7 @@
 		flex-wrap: wrap;
 		gap: 0.4rem;
 		font:
-			10px/1.5 ui-monospace,
+			12px/1.5 ui-monospace,
 			monospace;
 		margin-bottom: 0.5rem;
 	}
@@ -117,7 +117,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.3rem;
-		font-size: 10px;
+		font-size: 13px;
 		border-radius: 3px;
 	}
 	.legend button:focus-visible {
@@ -130,7 +130,7 @@
 		border-radius: 2px;
 	}
 	.caption {
-		font-size: 9px;
+		font-size: 12px;
 		margin-top: 0.35rem;
 		opacity: 0.7;
 	}

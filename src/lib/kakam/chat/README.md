@@ -7,7 +7,9 @@ offer only `none` and omit the parameter. Switching models restores that
 model's selection from the existing per-chat params (`kakam_effort`). The capsule opens a cascading model/effort menu. Compare mode configures each
 model in its own submenu; each request retains that model's valid default or
 saved selection. The capsule summarizes the first model and the additional model
-count. On phones, a back action returns from effort to the model list.
+count. Desktop and phone use the same fixed-size two-step panel; a back action
+returns from effort to the model list without changing the selection. Model and
+effort are committed together when an effort is chosen.
 
 Detection is conservative: exact API IDs/base IDs and dated snapshots of
 `gpt-6-astra`, `gpt-5.5`, `gpt-5.2`, and `gpt-5` are recognized. Display names,

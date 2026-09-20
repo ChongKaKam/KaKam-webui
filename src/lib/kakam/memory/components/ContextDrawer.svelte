@@ -1,11 +1,24 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { createEventDispatcher, onMount, tick } from 'svelte';
 	import type { Composition, ContextDetails } from '../types';
 	import { getContextDetails } from '../api';
 	import { labels } from '../service';
 	import { segmentColors } from '../activity';
+	import HandoffPanel from '../../handoff/components/HandoffPanel.svelte';
+	import type { HandoffHistory } from '../../handoff/types';
+	import type { ChatParams } from '../../chat/effort';
 	import PromptMatrix from './PromptMatrix.svelte';
 	export let report: Composition;
+	export let history: HandoffHistory = { messages: {} };
+	export let params: ChatParams = {};
+	let handoff = false;
+	let handoffContainer: HTMLDivElement;
+	async function openHandoff() {
+		handoff = true;
+		await tick();
+		handoffContainer?.scrollIntoView({ block: 'start' });
+		handoffContainer?.focus();
+	}
 	const dispatch = createEventDispatcher();
 	let dialog: HTMLDialogElement;
 	let details: ContextDetails | null = null;
@@ -69,17 +82,36 @@
 			<h2 class="text-base font-semibold">Context 组成</h2>
 			<p class="mt-1 break-all text-xs text-gray-500">{report.policy} · {report.model}</p>
 		</div>
-		<button
-			type="button"
-			class="shrink-0 rounded-lg px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
-			aria-label="关闭 Context 详情"
-			on:click={() => dispatch('close')}>关闭 ✕</button
-		>
+		<div class="flex shrink-0 items-center gap-1">
+			<button
+				type="button"
+				class="rounded-lg px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+				aria-label="生成 Hand-off 交接"
+				aria-controls="context-handoff"
+				aria-expanded={handoff}
+				on:click={openHandoff}>Hand-off</button
+			>
+			<button
+				type="button"
+				class="shrink-0 rounded-lg px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+				aria-label="关闭 Context 详情"
+				on:click={() => dispatch('close')}>关闭 ✕</button
+			>
+		</div>
 	</header>
 	<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-5">
 		<p class="text-xs leading-relaxed text-gray-500">
 			选中响应的推理前文本快照，不是输入框预览或完整供应商请求。点击下面的分类展开原文。
 		</p>
+		<div id="context-handoff" bind:this={handoffContainer} tabindex="-1">
+			{#if handoff}<HandoffPanel
+					{history}
+					{params}
+					{details}
+					messageId={report.message_id}
+					defaultModel={report.model}
+				/>{/if}
+		</div>
 		<PromptMatrix {report} />
 		{#if report.status === 'unavailable'}
 			<div

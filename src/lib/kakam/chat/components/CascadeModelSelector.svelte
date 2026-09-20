@@ -25,7 +25,6 @@
 	let show = false;
 	let search = '';
 	let activeId = '';
-	let width = 0;
 	let panel: HTMLDivElement;
 	let trigger: HTMLButtonElement;
 	let dropdown: Dropdown;
@@ -105,7 +104,6 @@
 	}
 </script>
 
-<svelte:window bind:innerWidth={width} />
 <Dropdown
 	bind:this={dropdown}
 	bind:show
@@ -135,14 +133,13 @@
 	<div
 		slot="content"
 		class="cascade"
-		class:has-detail={!!active}
 		bind:this={panel}
 		role="menu"
 		tabindex="-1"
 		aria-label="模型与思考强度"
 		on:keydown={navigate}
 	>
-		<div class="models-panel" class:mobile-hidden={!!active}>
+		<div class="models-panel" class:hidden={!!active}>
 			<div class="menu-heading">选择模型</div>
 			<input type="search" aria-label="搜索模型" placeholder="搜索模型…" bind:value={search} />
 			<div class="model-list" role="group" aria-label="模型">
@@ -155,11 +152,7 @@
 							aria-haspopup="menu"
 							aria-expanded={activeId === item.value}
 							aria-current={effectiveValues.includes(item.value) ? 'true' : undefined}
-							on:mouseenter={() => {
-								if (width >= 640) void reveal(item);
-							}}
 							on:click={() => {
-								selectModel(item);
 								void reveal(item, true);
 							}}
 						>
@@ -285,6 +278,8 @@
 	}
 	:global(.kakam-cascade-popup) {
 		z-index: 60;
+		overflow: auto !important;
+		width: min(21rem, calc(100vw - 1rem));
 		border: 1px solid var(--kakam-border);
 		border-radius: 1.125rem;
 		background: #fff;
@@ -297,15 +292,15 @@
 	}
 	.cascade {
 		display: flex;
-		width: 19rem;
+		width: 100%;
+		height: min(29rem, 65dvh);
 		max-width: calc(100vw - 1rem);
 		outline: none;
 	}
-	.cascade.has-detail {
-		width: 36rem;
-	}
 	.models-panel {
-		width: 19rem;
+		display: flex;
+		flex-direction: column;
+		width: 100%;
 		min-width: 0;
 		flex-shrink: 0;
 		padding: 0.5rem;
@@ -324,7 +319,8 @@
 		margin-bottom: 0.5rem;
 	}
 	.model-list {
-		max-height: min(21rem, 45dvh);
+		flex: 1;
+		min-height: 0;
 		overflow-y: auto;
 	}
 	.model-row {
@@ -403,11 +399,16 @@
 	.effort-panel {
 		flex: 1;
 		min-width: 0;
-		border-left: 1px solid var(--kakam-border);
+		overflow-y: auto;
 		padding: 0.5rem;
 	}
-	.effort-panel .back {
+	.models-panel.hidden {
 		display: none;
+	}
+	.effort-panel .back {
+		display: flex;
+		font-size: 0.875rem;
+		padding-left: 0.75rem;
 	}
 	.empty {
 		padding: 1rem;
@@ -417,24 +418,6 @@
 	@media (max-width: 639px) {
 		.model-pill {
 			min-height: 2.75rem;
-		}
-		.cascade,
-		.cascade.has-detail {
-			width: min(21rem, calc(100vw - 1rem));
-		}
-		.models-panel {
-			width: 100%;
-		}
-		.mobile-hidden {
-			display: none;
-		}
-		.effort-panel {
-			border-left: 0;
-		}
-		.effort-panel .back {
-			display: flex;
-			font-size: 0.875rem;
-			padding-left: 0.75rem;
 		}
 		input[type='search'] {
 			font-size: 1rem;

@@ -3,11 +3,13 @@
 	--kakam-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 	--kakam-border: rgb(128 128 128 / 0.17);
 	--kakam-surface: #f7f7f8;
+	--kakam-code-surface: #f3f3f3;
 	--kakam-text: #242424;
 	--kakam-muted: #646464;
 }
 .dark {
 	--kakam-surface: #252525;
+	--kakam-code-surface: #252525;
 	--kakam-text: #ececec;
 	--kakam-muted: #aaa;
 }
@@ -85,12 +87,12 @@ body {
 .kakam-codeblock {
 	min-width: 0;
 	border-color: var(--kakam-border);
-	background: var(--kakam-surface);
+	background: var(--kakam-code-surface);
 	margin-block: 1.25rem;
 }
 .kakam-codeblock .kakam-code-toolbar {
 	min-height: 2.75rem;
-	background: var(--kakam-surface);
+	background: var(--kakam-code-surface);
 	color: var(--kakam-muted);
 	border-bottom: 1px solid var(--kakam-border);
 }

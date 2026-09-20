@@ -4424,7 +4424,7 @@
 									id={embedded ? messageInputDropzoneId : undefined}
 									class=" pb-2 {dragged ? 'z-0' : 'z-10'}"
 								>
-									<PromptComposition report={getComposition(history)} />
+									<PromptComposition report={getComposition(history)} {history} {params} />
 									<MessageInput
 										bind:params
 										bind:this={messageInput}

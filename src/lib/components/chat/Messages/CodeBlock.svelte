@@ -1,6 +1,6 @@
 <script lang="ts">
 	import CodeHighlight from '$lib/kakam/code/components/CodeHighlight.svelte';
-	import CodeModeButton from '$lib/kakam/code/components/CodeModeButton.svelte';
+	import CodeToolbar from '$lib/kakam/code/components/CodeToolbar.svelte';
 	let editing = false;
 	import { toast } from 'svelte-sonner';
 	import { getContext, onMount, tick, onDestroy } from 'svelte';
@@ -22,7 +22,6 @@
 	import SvgPanZoom from '$lib/components/common/SVGPanZoom.svelte';
 
 	import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
-	import ChevronUpDown from '$lib/components/icons/ChevronUpDown.svelte';
 	import CommandLine from '$lib/components/icons/CommandLine.svelte';
 	import Cube from '$lib/components/icons/Cube.svelte';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
@@ -461,78 +460,30 @@
 			<div
 				class="kakam-code-toolbar sticky {stickyButtonsClassName} left-0 right-0 py-1.5 px-3.5 gap-2 flex items-center justify-end w-full z-10 text-xs text-black dark:text-white bg-white dark:bg-black rounded-t-2xl"
 			>
-				<div class="flex-1 truncate">
-					<Tooltip content={lang} placement="top-start">
-						<span class=" truncate text-ellipsis">
-							{lang}
-						</span>
-					</Tooltip>
-				</div>
-
-				<div class="flex items-center gap-0.5 shrink-0">
-					<button
-						class="flex gap-1 items-center bg-none border-none transition rounded-md px-1.5 py-0.5 bg-white dark:bg-black"
-						on:click={collapseCodeBlock}
-					>
-						<div class=" -translate-y-[0.5px]">
-							<ChevronUpDown className="size-3" />
-						</div>
-
-						<div>
-							{collapsed ? $i18n.t('Expand') : $i18n.t('Collapse')}
-						</div>
-					</button>
-
-					{#if ($config?.features?.enable_code_execution ?? true) && (lang.toLowerCase() === 'python' || lang.toLowerCase() === 'py' || (lang === '' && checkPythonCode(code)))}
-						{#if executing}
-							<div
-								class="run-code-button bg-none border-none p-0.5 cursor-not-allowed bg-white dark:bg-black"
-							>
-								{$i18n.t('Running')}
-							</div>
-						{:else if run}
-							<button
-								class="flex gap-1 items-center run-code-button bg-none border-none transition rounded-md px-1.5 py-0.5 bg-white dark:bg-black"
-								on:click={async () => {
-									code = _code;
-									await tick();
-									executePython(code);
-								}}
-							>
-								<div>
-									{$i18n.t('Run')}
-								</div>
-							</button>
-						{/if}
-					{/if}
-
-					{#if edit}<CodeModeButton bind:editing onFinish={saveCode} />{/if}
-
-					{#if save}
-						<button
-							class="save-code-button bg-none border-none transition rounded-md px-1.5 py-0.5 bg-white dark:bg-black"
-							on:click={saveCode}
-						>
-							{saved ? $i18n.t('Saved') : $i18n.t('Save')}
-						</button>
-					{/if}
-
-					<button
-						class="copy-code-button bg-none border-none transition rounded-md px-1.5 py-0.5 bg-white dark:bg-black"
-						on:click={copyCode}>{copied ? $i18n.t('Copied') : $i18n.t('Copy')}</button
-					>
-
-					{#if preview && ['html', 'svg'].includes(lang)}
-						<button
-							class="flex gap-1 items-center run-code-button bg-none border-none transition rounded-md px-1.5 py-0.5 bg-white dark:bg-black"
-							on:click={previewCode}
-						>
-							<div>
-								{$i18n.t('Preview')}
-							</div>
-						</button>
-					{/if}
-				</div>
+				<CodeToolbar
+					language={lang}
+					bind:editing
+					{collapsed}
+					editable={edit}
+					saveToChat={save}
+					{executing}
+					{copied}
+					{saved}
+					runnable={run &&
+						($config?.features?.enable_code_execution ?? true) &&
+						(['python', 'py'].includes(lang.toLowerCase()) ||
+							(lang === '' && checkPythonCode(code)))}
+					previewable={preview && ['html', 'svg'].includes(lang)}
+					onCollapse={collapseCodeBlock}
+					onSave={saveCode}
+					onCopy={copyCode}
+					onPreview={previewCode}
+					onRun={async () => {
+						code = _code;
+						await tick();
+						executePython(code);
+					}}
+				/>
 			</div>
 
 			<div
@@ -552,6 +503,7 @@
 							{lang}
 							onSave={() => {
 								saveCode();
+								editing = false;
 							}}
 							onChange={(value) => {
 								_code = value;

@@ -1,7 +1,11 @@
 <script lang="ts">
+	import type { HandoffHistory } from '../../handoff/types';
+	import type { ChatParams } from '../../chat/effort';
 	import type { Composition } from '../types';
 	import ContextDrawer from './ContextDrawer.svelte';
 	export let report: Composition | null = null;
+	export let history: HandoffHistory = { messages: {} };
+	export let params: ChatParams = {};
 	let open = false;
 	let identity = '';
 	$: nextIdentity = report ? `${report.message_id}:${report.detail_id ?? ''}` : '';
@@ -27,5 +31,5 @@
 				>{/if}
 		</button>
 	</div>
-	{#if open}<ContextDrawer {report} on:close={() => (open = false)} />{/if}
+	{#if open}<ContextDrawer {report} {history} {params} on:close={() => (open = false)} />{/if}
 {/if}
