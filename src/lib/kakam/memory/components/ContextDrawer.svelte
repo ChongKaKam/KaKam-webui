@@ -85,15 +85,15 @@
 		<div class="flex shrink-0 items-center gap-1">
 			<button
 				type="button"
-				class="rounded-lg px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
-				aria-label="生成 Hand-off 交接"
+				class="context-action"
+				aria-label="打开 Hand-off 交接"
 				aria-controls="context-handoff"
 				aria-expanded={handoff}
 				on:click={openHandoff}>Hand-off</button
 			>
 			<button
 				type="button"
-				class="shrink-0 rounded-lg px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+				class="context-action"
 				aria-label="关闭 Context 详情"
 				on:click={() => dispatch('close')}>关闭 ✕</button
 			>
@@ -165,6 +165,33 @@
 </dialog>
 
 <style>
+	.context-drawer .context-action {
+		flex-shrink: 0;
+		padding: 0.5rem 0.75rem;
+		border: 1px solid #e5e5e5;
+		border-radius: 0.65rem;
+		background: transparent;
+		color: inherit;
+		font-size: 0.875rem;
+		box-shadow: none;
+	}
+	.context-drawer .context-action:focus-visible {
+		outline: 2px solid #a3a3a3;
+		outline-offset: 2px;
+	}
+	:global(.dark) .context-drawer .context-action {
+		border-color: #fff9;
+	}
+	:global(.dark) .context-drawer .context-action:focus-visible {
+		outline-color: #fff;
+	}
+	.context-drawer .context-action:hover {
+		background: rgb(128 128 128 / 0.08);
+	}
+	#context-handoff:focus {
+		outline: none;
+	}
+
 	.context-drawer {
 		position: fixed;
 		inset: 0 0 0 auto;

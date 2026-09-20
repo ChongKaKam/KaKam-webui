@@ -156,7 +156,7 @@ Context matrix labels and captions are larger.
 Hand-off implementation lives in `src/lib/kakam/handoff/` and is mounted by the
 existing project-owned Context drawer. It defaults to the selected response's
 model, lets the user choose another available model, and uses the existing
-verified `/api/chat/completions` dispatcher, including model access checks and
+authenticated `/api/chat/completions` dispatcher, including model access checks and
 per-model effort policy. Requests do not carry parent/chat IDs, so they do not
 create a chat or trigger KaKam Memory recall/extraction. No new backend endpoint,
 dependency or database schema. Direct models use the active socket session.
@@ -168,7 +168,13 @@ files. Known hidden reasoning blocks are omitted. The initial objective and rece
 messages are bounded, with explicit notices for missing/truncated context. Expired
 Memory snapshots do not prevent conversation-only generation. The prompt treats
 source records as data and asks the model to distinguish verified work from plans.
-Generation is cancellable, has a three-minute client timeout, and retains the
-previous result on retry failure. Results are editable and remain only in the
+Opening Hand-off only reveals the panel; Generate explicitly starts the request.
+The user-provided editorial prompt lives in `handoff/prompt.ts`. SSE chat/Responses
+output is displayed incrementally (JSON responses remain supported), with elapsed
+time and connection/reasoning/output status; reasoning content is not displayed.
+Generation is cancellable, with a three-minute inactivity timeout and ten-minute
+overall limit. Retry failures before new output preserve the previous text;
+interrupted streams retain partial output with an incomplete warning. Results are
+editable and remain only in the
 open drawer until copied or exported as Markdown; closing the drawer aborts the
 client request. UI validation uses mock responses rather than production chats.

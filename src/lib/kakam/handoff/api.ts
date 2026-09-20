@@ -1,6 +1,7 @@
 import { WEBUI_BASE_URL } from '$lib/constants';
 import { effortRequest, type ChatParams } from '../chat/effort';
-import { completionText, handoffInstruction } from './service';
+import { readHandoffResponse, type HandoffProgress } from './response';
+import { handoffInstruction } from './prompt';
 import type { HandoffModel } from './types';
 
 /** Ephemeral completion through the existing authenticated provider dispatcher. */
@@ -9,7 +10,8 @@ export async function generateHandoff(
 	source: string,
 	params: ChatParams,
 	signal: AbortSignal,
-	sessionId?: string
+	sessionId?: string,
+	progress: HandoffProgress = {}
 ): Promise<string> {
 	const response = await fetch(`${WEBUI_BASE_URL}/api/chat/completions`, {
 		method: 'POST',
@@ -20,7 +22,7 @@ export async function generateHandoff(
 			model: model.id,
 			model_item: model,
 			session_id: sessionId,
-			stream: false,
+			stream: true,
 			messages: [
 				{ role: 'system', content: handoffInstruction },
 				{ role: 'user', content: source }
@@ -38,5 +40,5 @@ export async function generateHandoff(
 			throw new Error('登录已过期或无权使用此模型，请重新登录或选择其他模型。');
 		throw new Error(`生成失败（${response.status}），请重试或更换模型。`);
 	}
-	return completionText(await response.json());
+	return readHandoffResponse(response, signal, progress);
 }

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onDestroy } from 'svelte';
 	import { models, socket } from '$lib/stores';
 	import { copyToClipboard } from '$lib/utils';
 	import { generateHandoff } from '../api';
@@ -21,6 +21,10 @@
 	let controller: AbortController | null = null;
 	let alive = true;
 	let timeout: ReturnType<typeof setTimeout>;
+	let deadline: ReturnType<typeof setTimeout>;
+	let timer: ReturnType<typeof setInterval>;
+	let elapsed = 0;
+	let phase = '正在连接模型';
 	$: available = $models.filter((model) => !model.info?.meta?.hidden);
 	let source = buildHandoffInput(history, messageId, details);
 	async function generate() {
@@ -41,12 +45,41 @@
 		error = '';
 		status = '';
 		let timedOut = false;
-		timeout = setTimeout(() => {
+		let receivedText = false;
+		elapsed = 0;
+		phase = '正在连接模型';
+		const started = Date.now();
+		timer = setInterval(() => {
+			elapsed = Math.floor((Date.now() - started) / 1000);
+		}, 1000);
+		const expire = () => {
 			timedOut = true;
 			request.abort();
-		}, 180_000);
+		};
+		const refreshTimeout = () => {
+			clearTimeout(timeout);
+			timeout = setTimeout(expire, 180_000);
+		};
+		refreshTimeout();
+		deadline = setTimeout(expire, 600_000);
 		try {
-			const text = await generateHandoff(model, source.text, params, request.signal, $socket?.id);
+			const text = await generateHandoff(model, source.text, params, request.signal, $socket?.id, {
+				onActivity: refreshTimeout,
+				onPhase: (next) => {
+					if (alive)
+						phase = {
+							waiting: '已连接，等待模型输出',
+							thinking: '模型正在推理',
+							writing: '正在接收交接正文'
+						}[next];
+				},
+				onText: (text) => {
+					if (!alive || request.signal.aborted) return;
+					receivedText = true;
+					result = text;
+					resultModel = model.name || model.id;
+				}
+			});
 			if (alive && !request.signal.aborted) {
 				result = text;
 				resultModel = model.name || model.id;
@@ -56,13 +89,16 @@
 			if (alive)
 				error = request.signal.aborted
 					? timedOut
-						? '生成超时，请重试或更换模型。'
+						? '模型长时间未响应或已达到等待上限，请重试或更换模型。'
 						: '已停止生成。'
 					: cause instanceof Error
 						? cause.message
 						: '生成失败，请重试。';
+			if (alive && receivedText) error += ' 已保留收到的部分正文，内容尚不完整。';
 		} finally {
 			clearTimeout(timeout);
+			clearTimeout(deadline);
+			clearInterval(timer);
 			if (alive) {
 				busy = false;
 				controller = null;
@@ -87,13 +123,12 @@
 		setTimeout(() => URL.revokeObjectURL(url), 1000);
 		status = '已导出 Markdown';
 	}
-	onMount(() => {
-		void generate();
-	});
 	onDestroy(() => {
 		alive = false;
 		controller?.abort();
 		clearTimeout(timeout);
+		clearTimeout(deadline);
+		clearInterval(timer);
 	});
 </script>
 
@@ -117,18 +152,19 @@
 			>{/if}
 	</div>
 	<p class="note">
-		根据当前分支的 {source.count} 条消息{source.hasMemory ? '及可见长期记忆' : ''}生成，不含
-		System、图片和附件原文件。{source.truncated
+		点击“生成”后，将根据当前分支的 {source.count} 条消息{source.hasMemory
+			? '及可见长期记忆'
+			: ''}生成，不含 System、图片和附件原文件。{source.truncated
 			? '长对话已保留最初目标和最近消息，部分内容省略。'
 			: ''}
 	</p>
-	{#if busy}<p role="status">正在生成交接内容…</p>{/if}
+	{#if busy}<p role="status">{phase} · {elapsed} 秒</p>{/if}
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 	<label for="handoff-result">交接 prompt{resultModel ? ` · ${resultModel}` : ''}</label>
 	<textarea
 		id="handoff-result"
 		bind:value={result}
-		disabled={busy}
+		readonly={busy}
 		placeholder="生成结果会显示在这里，你可以继续编辑后复制或导出。"
 		spellcheck="false"
 	></textarea>

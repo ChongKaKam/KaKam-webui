@@ -27,6 +27,9 @@ describe('ephemeral handoff request', () => {
 		expect(url).toBe('/api/chat/completions');
 		expect(options.signal).toBe(controller.signal);
 		expect(options.headers.Authorization).toBe('Bearer test-token');
+		expect(body.stream).toBe(true);
+		expect(body.messages[0].content).toContain('任务交接编辑');
+		expect(body.messages[0].content).toContain('助手报告完成，但缺少可见验证');
 		expect(body._kakam_reasoning_effort).toBe('xhigh');
 		expect(body).not.toHaveProperty('chat_id');
 		expect(body).not.toHaveProperty('parent_id');
