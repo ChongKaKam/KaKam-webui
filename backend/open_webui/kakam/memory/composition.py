@@ -27,12 +27,18 @@ def render(memories):
     )
 
 
-def split_context(messages, memory_text='', model_system='', *, label_roles=False):
+def split_context(messages, memory_text='', model_system='', *, label_roles=False, summary_text=''):
     buckets = {'system': [], 'long_term': [], 'session': [], 'current': []}
     last_user = max((i for i, message in enumerate(messages) if message.get('role') == 'user'), default=-1)
     found_memory = False
+    found_summary = False
     for index, message in enumerate(messages):
         value = text_content(message)
+        if summary_text and message.get('role') == 'system' and summary_text in value:
+            value = value.replace(summary_text, '', 1)
+            if not found_summary:
+                buckets['session'].append(summary_text)
+                found_summary = True
         if memory_text and memory_text in value:
             value = value.replace(memory_text, '', 1)
             if not found_memory:
@@ -50,12 +56,12 @@ def split_context(messages, memory_text='', model_system='', *, label_roles=Fals
     return buckets
 
 
-def composition(messages, memory_text='', model_system=''):
+def composition(messages, memory_text='', model_system='', summary_text=''):
     return [
         {
             'kind': kind,
             'characters': sum(len(text) for text in texts),
             'estimated_tokens': sum(math.ceil(len(text.encode('utf-8')) / 4) for text in texts),
         }
-        for kind, texts in split_context(messages, memory_text, model_system).items()
+        for kind, texts in split_context(messages, memory_text, model_system, summary_text=summary_text).items()
     ]

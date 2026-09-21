@@ -30,6 +30,8 @@ async def proxy(method, path, user, body=None):
         code = exc.response.status_code
         if code == 404:
             raise HTTPException(404, 'Memory not found') from None
+        if code == 409:
+            raise HTTPException(409, 'Memory changed or writes disabled; refresh and retry') from None
         if code in (400, 422):
             raise HTTPException(422, 'Memory was rejected: check content and sensitive information') from None
         raise HTTPException(503, 'Memory service unavailable') from None
@@ -58,6 +60,9 @@ async def memories(user=Depends(get_verified_user)):
 
 @router.post('')
 async def add(body: NewMemory, user=Depends(get_verified_user)):
+    from .manager import writable
+
+    writable()
     return await proxy('POST', '/v1/memories', user, body.model_dump())
 
 
@@ -70,6 +75,9 @@ async def activity(days: int = Query(default=30, ge=7, le=180), user=Depends(get
 
 @router.delete('/{memory_id}')
 async def delete(memory_id: UUID, user=Depends(get_verified_user)):
+    from .manager import writable
+
+    writable()
     return await proxy('DELETE', f'/v1/memories/{memory_id}', user)
 
 

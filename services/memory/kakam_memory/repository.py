@@ -23,10 +23,19 @@ class Repository:
         )
 
     def migrate(self):
-        sql = (Path(__file__).parent.parent / 'migrations/001_initial.sql').read_text()
         with self.connect() as db:
             db.execute('SELECT pg_advisory_xact_lock(7218411)')
-            db.execute(sql)
+            db.execute(
+                'CREATE TABLE IF NOT EXISTS memory_schema_version (version INTEGER PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT now())'
+            )
+            applied = {row['version'] for row in db.execute('SELECT version FROM memory_schema_version')}
+            for path in sorted((Path(__file__).parent.parent / 'migrations').glob('*.sql')):
+                version = int(path.name.split('_', 1)[0])
+                if version not in applied:
+                    db.execute(path.read_text())
+                    db.execute(
+                        'INSERT INTO memory_schema_version(version) VALUES (%s) ON CONFLICT DO NOTHING', (version,)
+                    )
 
     def revision(self, owner):
         with self.connect() as db:
@@ -43,24 +52,32 @@ class Repository:
     def list(self, owner):
         with self.connect() as db:
             return db.execute(
-                "SELECT id,kind,content,pinned,created_at,expires_at FROM memory_item WHERE owner=%s AND status='active' AND expires_at>now() ORDER BY updated_at DESC LIMIT 200",
+                "SELECT id,kind,content,pinned,version,tags,created_at,expires_at FROM memory_item WHERE owner=%s AND status='active' AND expires_at>now() ORDER BY updated_at DESC LIMIT 200",
                 (owner,),
             ).fetchall()
 
-    def recall(self, owner, days, vector, version):
+    def recall(self, owner, days, vector, version, excluded=()):
         with self.connect() as db:
             # Scope BEFORE exact distance sorting. No approximate global index.
             return db.execute(
                 """WITH scoped AS MATERIALIZED (
                 SELECT * FROM memory_item WHERE owner=%s AND status='active'
                 AND updated_at >= now() - make_interval(days => %s)
-                AND expires_at>now() AND embedding_version=%s)
+                AND expires_at>now() AND embedding_version=%s AND NOT(id=ANY(%s::uuid[])))
                 SELECT id,kind,content,pinned,expires_at,updated_at,
                 1-(embedding <=> %s::vector) AS similarity FROM scoped
                 WHERE (pinned OR kind IN ('profile','preference','instruction') OR 1-(embedding <=> %s::vector) >= 0.3)
                 ORDER BY pinned DESC, (kind IN ('profile','preference','instruction')) DESC,
                 embedding <=> %s::vector, id LIMIT 30""",
-                (owner, days, version, vector_literal(vector), vector_literal(vector), vector_literal(vector)),
+                (
+                    owner,
+                    days,
+                    version,
+                    list(excluded),
+                    vector_literal(vector),
+                    vector_literal(vector),
+                    vector_literal(vector),
+                ),
             ).fetchall()
 
     def add(self, owner, content, kind, vector, version, source=None):
@@ -81,7 +98,7 @@ class Repository:
                     "INSERT INTO memory_event(owner,memory_id,action) VALUES (%s,%s,'created')", (owner, row['id'])
                 )
                 self.bump(db, owner)
-            return {'created': bool(row)}
+            return {'created': bool(row), 'id': str(row['id']) if row else None}
 
     def delete(self, owner, memory_id):
         with self.connect() as db:
@@ -92,6 +109,9 @@ class Repository:
                 (owner, memory_id),
             ).fetchone()
             if row:
+                db.execute("DELETE FROM memory_proposal WHERE owner=%s AND result->>'id'=%s", (owner, str(memory_id)))
+                db.execute('DELETE FROM memory_membership WHERE memory_id=%s', (memory_id,))
+                db.execute('DELETE FROM memory_version WHERE memory_id=%s', (memory_id,))
                 db.execute('DELETE FROM memory_source WHERE memory_id=%s', (memory_id,))
                 db.execute(
                     "INSERT INTO memory_event(owner,memory_id,action) VALUES (%s,%s,'deleted')", (owner, memory_id)
@@ -133,3 +153,13 @@ class Repository:
             db.execute('DELETE FROM memory_item WHERE expires_at < now()')
             db.execute("DELETE FROM memory_job WHERE created_at<now()-interval '30 days'")
             db.execute("DELETE FROM memory_event WHERE created_at<now()-interval '30 days'")
+            db.execute('DELETE FROM memory_proposal WHERE expires_at<now()')
+            db.execute("DELETE FROM memory_operation WHERE created_at<now()-interval '30 days'")
+            db.execute("DELETE FROM memory_session WHERE updated_at<now()-interval '30 days'")
+
+    def get(self, owner, memory_id):
+        with self.connect() as db:
+            return db.execute(
+                "SELECT id,content,kind,pinned,tags,version,expires_at,updated_at FROM memory_item WHERE owner=%s AND id=%s AND status='active' AND expires_at>now()",
+                (owner, memory_id),
+            ).fetchone()

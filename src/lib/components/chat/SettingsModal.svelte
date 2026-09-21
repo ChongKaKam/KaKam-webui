@@ -1,6 +1,7 @@
 <script lang="ts">
 	import MobileSettingsNav from '$lib/kakam/settings/components/MobileSettingsNav.svelte';
 	import MemoryPolicySettings from '$lib/kakam/memory/components/MemoryPolicySettings.svelte';
+	import MemoryAdminSettings from '$lib/kakam/memory/admin/components/MemoryAdminSettings.svelte';
 	import { canAccessMemoryPolicy, memoryPolicyTab } from '$lib/kakam/memory/navigation';
 	import { browser } from '$app/environment';
 	import { getContext, onMount, tick } from 'svelte';
@@ -157,6 +158,7 @@
 		'admin:general': 'System',
 		'admin:authentication': 'System',
 		'admin:connections': 'AI',
+		'admin:memory': 'AI',
 		'admin:models': 'AI',
 		'admin:subagents': 'AI',
 		'admin:evaluations': 'Quality',
@@ -716,6 +718,11 @@
 			]
 		},
 		{
+			id: 'admin:memory',
+			title: 'Memory 服务',
+			keywords: ['memory', 'context', 'embedding', '记忆', '压缩', 'api key', 'base url']
+		},
+		{
 			id: 'admin:models',
 			title: 'Models',
 			keywords: [
@@ -1203,7 +1210,7 @@
 								selectedTab = tab.id;
 							}}
 						>
-							<AdminTabIcon id={adminTabSegment(tab.id)} className="size-3.5" strokeWidth="2" />
+							<AdminTabIcon id={tab.id === 'admin:memory' ? 'db' : adminTabSegment(tab.id)} className="size-3.5" strokeWidth="2" />
 							<span>{$i18n.t(tab.title)}</span>
 						</button>
 					{/if}
@@ -1295,6 +1302,8 @@
 						toast.success($i18n.t('Settings saved successfully!'));
 					}}
 				/>
+			{:else if selectedTab === 'admin:memory' && $user?.role === 'admin'}
+				<MemoryAdminSettings />
 			{:else if selectedTab === 'admin:models'}
 				<AdminModels bind:tabState />
 			{:else if selectedTab === 'admin:subagents'}

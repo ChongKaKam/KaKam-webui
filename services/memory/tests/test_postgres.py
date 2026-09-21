@@ -11,7 +11,7 @@ from psycopg.rows import dict_row
 
 
 @pytest.fixture
-def repo():
+def repo(request):
     url = os.getenv('KAKAM_TEST_DATABASE_URL')
     if not url:
         pytest.skip('KAKAM_TEST_DATABASE_URL not set; requires disposable PostgreSQL + pgvector')
@@ -22,8 +22,9 @@ def repo():
     repository = Repository(url)
     repository.connect = lambda: psycopg.connect(url, row_factory=dict_row, options=f'-c search_path={schema},public')
     try:
-        repository.migrate()
-        repository.migrate()
+        if getattr(request, 'param', True):
+            repository.migrate()
+            repository.migrate()
         yield repository
     finally:
         with psycopg.connect(url) as db:

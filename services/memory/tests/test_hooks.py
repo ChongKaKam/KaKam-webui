@@ -49,7 +49,7 @@ def adapter(monkeypatch):
     monkeypatch.setattr(
         client,
         'call',
-        AsyncMock(return_value={'cache_hit': True, 'memories': [{'kind': 'preference', 'content': '中文'}]}),
+        AsyncMock(return_value={'policy': 'default', 'cache_hit': True, 'memories': [{'kind': 'preference', 'content': '中文'}]}),
     )
     user = types.SimpleNamespace(id='alice', role='admin', settings={})
     metadata = {'chat_id': 'chat', 'message_id': 'reply', 'user_message_id': 'user-msg'}
@@ -134,12 +134,10 @@ def test_ownership_permission_optout_and_shadow(adapter, monkeypatch):
     assert meta['kakam_memory']['status'] == 'shadow'
 
 
-def test_write_uses_persisted_user_not_injected_or_assistant_text(adapter):
+def test_completed_turn_never_implicitly_writes_knowledge(adapter):
     hooks, user, meta, chats = adapter
     asyncio.run(hooks.after_turn(None, user, {}, meta, [{'role': 'assistant', 'content': 'invented'}]))
-    args = hooks.client.call.call_args.args
-    assert args[1] == '/v1/events/turn-completed'
-    assert args[2] == 'alice' and args[3]['evidence'] == '请记住中文'
+    hooks.client.call.assert_not_called()
     chats.get_message_by_id_and_message_id.return_value = {'role': 'assistant', 'content': 'invented'}
     hooks.client.call.reset_mock()
     asyncio.run(hooks.after_turn(None, user, {}, meta, []))

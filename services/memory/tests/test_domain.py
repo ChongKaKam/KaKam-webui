@@ -42,12 +42,6 @@ def test_extractor_requires_evidence_and_durability():
     assert accepted_candidates([None, 'bad', {}], 'text') == []
 
 
-def test_explicit_only_fallback():
-    provider = Providers(Settings())
-    assert asyncio.run(provider.extract('今天执行一次构建')) == []
-    assert asyncio.run(provider.extract('请记住：我喜欢中文'))[0]['content'] == '我喜欢中文'
-
-
 def test_selection_is_bounded_deduplicated_stable():
     rows = [{'id': str(i), 'content': str(i) * 1000} for i in reversed(range(20))]
     selected = select_memories(rows + rows)

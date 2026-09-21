@@ -27,6 +27,7 @@ from langchain_core.utils.function_calling import (
 )
 from open_webui.config import BYPASS_ADMIN_ACCESS_CONTROL
 from open_webui.kakam.memory.client import enabled as kakam_memory_enabled
+from open_webui.kakam.memory.tools import kakam_recall, kakam_propose_memory
 from open_webui.env import (
     AIOHTTP_CLIENT_ALLOW_REDIRECTS,
     AIOHTTP_CLIENT_SESSION_SSL,
@@ -675,6 +676,15 @@ async def get_builtin_tools(
                 delete_memory,
             ]
         )
+
+    if (
+        kakam_memory_enabled()
+        and is_builtin_tool_enabled('memory')
+        and get_model_capability('memory')
+        and await has_user_permission('memories')
+        and not getattr(request.state, 'internal', False)
+    ):
+        builtin_functions.extend([kakam_recall, kakam_propose_memory])
 
     # Add web search tools if builtin category enabled AND enabled globally AND model has web_search capability
     if (

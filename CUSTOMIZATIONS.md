@@ -1,5 +1,34 @@
 # Upstream integration points
 
+## Administrator Memory provider configuration
+
+| Upstream file | Reason / delegated behavior |
+| --- | --- |
+| `backend/open_webui/main.py` | Register the admin-only Memory configuration BFF router. |
+| `src/lib/components/chat/SettingsModal.svelte` | Add the admin AI / Memory service entry and mount `src/lib/kakam/memory/admin/components/MemoryAdminSettings.svelte`. |
+
+Provider settings, validation, encrypted persistence and live configuration snapshots belong to the independent
+Memory service; the BFF only authenticates admins and signs internal requests. `cryptography` is added to the
+independent service (same version as upstream) for authenticated AES-GCM encryption. See
+`services/memory/ADMIN_CONFIG.md` for deployment, key handling, API protocols and embedding migration limits.
+
+## Memory Manager v1 / default policy v2
+
+All new domain behavior remains in `services/memory/kakam_memory/`; BFF adaptations
+in `backend/open_webui/kakam/memory/`; UI in `src/lib/kakam/memory/` and the existing
+`src/lib/kakam/handoff/`. No new production dependencies.
+
+| Upstream file | Reason / delegated behavior |
+| --- | --- |
+| `backend/open_webui/main.py` | Mount the authenticated Manager BFF router alongside existing Memory endpoints. |
+| `backend/open_webui/utils/middleware.py` | Delegate context compaction to the KaKam adapter; use native compaction only when KaKam is disabled. Original messages remain unchanged in storage. |
+| `backend/open_webui/utils/tools.py` | Register bounded KaKam recall/proposal tools; no model approval or direct SQL tool. Native Memory tools remain suppressed. |
+
+Completed-turn hooks now save usage only, never implicitly persist knowledge.
+The service migration cancels legacy unapproved jobs. Model-proposed records need
+an authenticated user's separate confirmation. See `services/memory/MANAGER.md`
+for contracts, deployment, limitations, and migration/rollback precautions.
+
 ## KaKam Memory default v1
 
 Custom implementation: `services/memory/`, `backend/open_webui/kakam/memory/`,

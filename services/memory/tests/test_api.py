@@ -107,8 +107,8 @@ def test_crud_isolation_cache_revision_and_preferences(setup):
 
 def test_stale_data_filtered_even_on_cache_hit(setup):
     client, repo = setup
-    repo.add('alice', 'stale', 'fact', [], '')
-    row = next(iter(repo.rows['alice'].values()))
+    repo.add('default:alice', 'stale', 'fact', [], '')
+    row = next(iter(repo.rows['default:alice'].values()))
     row['updated_at'] = datetime.now(timezone.utc) - timedelta(days=8)
     for _ in range(2):
         assert client.post('/v1/recall', headers=headers(), json={'query': '', 'days': 7}).json()['memories'] == []
@@ -127,9 +127,9 @@ def test_invalid_policy_window(setup, body):
 def test_jobs_idempotent_private_and_secrets_rejected(setup):
     client, _ = setup
     body = {'chat_id': 'chat', 'message_id': 'msg', 'evidence': '请记住：中文'}
-    assert client.post('/v1/events/turn-completed', headers=headers(), json=body).json()['queued']
     assert not client.post('/v1/events/turn-completed', headers=headers(), json=body).json()['queued']
-    assert client.post('/v1/events/turn-completed', headers=headers('bob'), json=body).json()['queued']
+    assert not client.post('/v1/events/turn-completed', headers=headers(), json=body).json()['queued']
+    assert not client.post('/v1/events/turn-completed', headers=headers('bob'), json=body).json()['queued']
     for update in [{'chat_id': 'temporary:1'}, {'chat_id': 'channel:1'}, {'evidence': 'password: 123'}]:
         assert not client.post('/v1/events/turn-completed', headers=headers(), json={**body, **update}).json()['queued']
     assert client.post('/v1/memories', headers=headers(), json={'content': 'api-key: sensitive'}).status_code == 422

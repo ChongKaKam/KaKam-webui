@@ -139,6 +139,8 @@ from open_webui.models.channels import Channels
 from open_webui.models.chats import ChatForm, Chats
 from open_webui.models.config import Config
 from open_webui.kakam.memory import client as kakam_memory_client, router as kakam_memory_router
+from open_webui.kakam.memory.manager import router as kakam_manager_router
+from open_webui.kakam.memory.admin import router as kakam_memory_admin_router
 from open_webui.models.functions import Functions
 from open_webui.models.messages import Messages
 from open_webui.models.models import Models, normalize_model_tags
@@ -849,6 +851,8 @@ app.include_router(skills.router, prefix='/api/v1/skills', tags=['skills'])
 
 app.include_router(memories.router, prefix='/api/v1/memories', tags=['memories'])
 app.include_router(kakam_memory_router.router, prefix='/api/custom/memory', tags=['kakam-memory'])
+app.include_router(kakam_manager_router, prefix='/api/custom/memory', tags=['kakam-memory'])
+app.include_router(kakam_memory_admin_router, prefix='/api/custom/memory', tags=['kakam-memory'])
 app.include_router(folders.router, prefix='/api/v1/folders', tags=['folders'])
 app.include_router(groups.router, prefix='/api/v1/groups', tags=['groups'])
 app.include_router(files.router, prefix='/api/v1/files', tags=['files'])

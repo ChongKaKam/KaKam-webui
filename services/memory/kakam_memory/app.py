@@ -1,15 +1,22 @@
 import asyncio
 import hmac
+import re
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from typing import Literal
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, field_validator
 
+from .admin import router as admin_router
 from .config import Settings
-from .domain import POLICIES, SECRET, TTLCache, fingerprint, select_memories, validate_content
+from .domain import SECRET, TTLCache, fingerprint, select_memories, validate_content
+from .manager import router as manager_router
+from .policy import POLICY_REGISTRY
+from .provider_config import ConfigStore
 from .providers import Providers
 from .repository import Repository
 
@@ -43,6 +50,8 @@ class MemoryRead(BaseModel):
     content: str
     pinned: bool = False
     expires_at: datetime
+    version: int = 1
+    tags: list[str] = Field(default_factory=list)
 
 
 class RecallResult(BaseModel):
@@ -55,7 +64,8 @@ class RecallResult(BaseModel):
 def create_app(settings=None, repository=None, providers=None):
     cfg = settings or Settings()
     repo = repository or Repository(cfg.database_url)
-    provider = providers or Providers(cfg)
+    store = ConfigStore(repo, cfg) if hasattr(repo, 'connect') else None
+    embedding_cache = TTLCache(capacity=512, ttl=300)
     cache = TTLCache(ttl=60)
 
     @asynccontextmanager
@@ -66,12 +76,31 @@ def create_app(settings=None, repository=None, providers=None):
 
     app = FastAPI(title='KaKam Memory', lifespan=lifespan)
 
-    def owner(authorization: str = Header(default=''), x_memory_user: str = Header(default='')):
+    def owner(
+        authorization: str = Header(default=''),
+        x_memory_user: str = Header(default=''),
+        x_memory_tenant: str = Header(default='default'),
+    ):
         if not cfg.service_key or not hmac.compare_digest(authorization, 'Bearer ' + cfg.service_key):
             raise HTTPException(401, 'Invalid service credential')
         if not x_memory_user or len(x_memory_user) > 256:
             raise HTTPException(400, 'Missing user identity')
-        return x_memory_user
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', x_memory_tenant):
+            raise HTTPException(400, 'Invalid tenant identity')
+        return x_memory_tenant + ':' + x_memory_user
+
+    async def resolve(user=Depends(owner)):
+        effective = await asyncio.to_thread(store.effective, user) if store else cfg
+        return effective, providers or Providers(effective, embedding_cache)
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_error(request, exc):
+        # Never echo input values (in particular provider API keys) in validation errors.
+        return JSONResponse(status_code=422, content={'detail': 'Invalid Memory request fields'})
+
+    app.include_router(manager_router(repo, owner, resolve))
+    if store:
+        app.include_router(admin_router(cfg, store, owner))
 
     @app.get('/health')
     def health():
@@ -80,14 +109,15 @@ def create_app(settings=None, repository=None, providers=None):
 
     @app.get('/v1/policies')
     def policies(user=Depends(owner)):
-        return POLICIES
+        return [p.manifest for p in POLICY_REGISTRY.values()]
 
     @app.get('/v1/memories', response_model=list[MemoryRead])
     def memories(user=Depends(owner)):
         return repo.list(user)
 
     @app.post('/v1/memories')
-    async def add(body: NewMemory, user=Depends(owner)):
+    async def add(body: NewMemory, user=Depends(owner), runtime=Depends(resolve)):
+        cfg, provider = runtime
         vector = await provider.embed(body.content, user)
         return await asyncio.to_thread(repo.add, user, body.content, body.kind, vector, cfg.embedding_version)
 
@@ -98,12 +128,21 @@ def create_app(settings=None, repository=None, providers=None):
         return {'deleted': True}
 
     @app.post('/v1/recall', response_model=RecallResult)
-    async def recall(body: Recall, user=Depends(owner)):
+    async def recall(body: Recall, user=Depends(owner), runtime=Depends(resolve)):
+        cfg, provider = runtime
         revision = await asyncio.to_thread(repo.revision, user)
         # Do not send recognisable credentials to a second (embedding) provider.
         if SECRET.search(body.query):
             return {'policy': body.policy, 'memories': [], 'cache_hit': False, 'revision': revision}
-        key = (user, body.policy, body.days, revision, cfg.embedding_version, fingerprint(body.query))
+        key = (
+            user,
+            body.policy,
+            body.days,
+            revision,
+            cfg.config_revision,
+            cfg.embedding_version,
+            fingerprint(body.query),
+        )
         rows = cache.get(key) if body.cache else None
         hit = rows is not None
         if rows is None:
@@ -118,9 +157,8 @@ def create_app(settings=None, repository=None, providers=None):
 
     @app.post('/v1/events/turn-completed', status_code=202)
     def turn(body: Turn, user=Depends(owner)):
-        if body.chat_id.startswith(('temporary:', 'local:', 'channel:')) or SECRET.search(body.evidence):
-            return {'queued': False}
-        return {'queued': repo.enqueue(user, body.chat_id, body.message_id, body.evidence)}
+        # Compatibility endpoint: completed turns are not permission to persist knowledge.
+        return {'queued': False, 'reason': 'Use an explicit memory action or confirm a proposal'}
 
     return app
 

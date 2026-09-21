@@ -32,6 +32,8 @@ async def prepare(request, form_data, user, metadata, model):
         'memory_text': '',
     }
     metadata['kakam_memory'] = report
+    if metadata.get('kakam_compaction'):
+        report['compaction'] = metadata['kakam_compaction']
     # Temporary and channel chats don't read private cross-session memory either.
     eligible = (
         prefs['enabled']
@@ -56,11 +58,17 @@ async def prepare(request, form_data, user, metadata, model):
                 return form_data
             result = await client.call(
                 'POST',
-                '/v1/recall',
+                '/v1/manager/prepare-turn',
                 user.id,
-                {'query': query, 'days': prefs['days'], 'policy': prefs['policy'], 'cache': prefs['cache']},
+                {'session_id': metadata['chat_id'], 'query': query, 'days': prefs['days'], 'cache': prefs['cache']},
             )
-        report.update(status='shadow' if mode('RECALL') == 'shadow' else 'ready', cache_hit=result['cache_hit'])
+        report.update(
+            status='shadow' if mode('RECALL') == 'shadow' else 'ready',
+            cache_hit=result['cache_hit'],
+            policy=result['policy'],
+            operation_id=result.get('operation_id'),
+            omitted_preferred=result.get('omitted_preferred', []),
+        )
         if mode('RECALL') == 'on':
             context = render(result['memories'])
             if context:
@@ -78,7 +86,12 @@ async def emit_composition(form_data, metadata, emitter, model_system=''):
         return
     payload = {key: value for key, value in report.items() if key != 'memory_text'}
     payload.update(
-        segments=composition(form_data.get('messages', []), report['memory_text'], model_system),
+        segments=composition(
+            form_data.get('messages', []),
+            report['memory_text'],
+            model_system,
+            metadata.get('kakam_session_summary', ''),
+        ),
         measurement='text-estimate',
         message_id=metadata.get('message_id'),
         model=form_data.get('model'),
@@ -90,7 +103,13 @@ async def emit_composition(form_data, metadata, emitter, model_system=''):
                 metadata['kakam_detail_owner'],
                 metadata['chat_id'],
                 metadata['message_id'],
-                split_context(form_data.get('messages', []), report['memory_text'], model_system, label_roles=True),
+                split_context(
+                    form_data.get('messages', []),
+                    report['memory_text'],
+                    model_system,
+                    label_roles=True,
+                    summary_text=metadata.get('kakam_session_summary', ''),
+                ),
             )
         except Exception as exc:
             log.warning('KaKam context preview skipped (%s)', type(exc).__name__)
@@ -124,39 +143,4 @@ async def after_turn(request, user, model, metadata, messages):
                 return
     except Exception as exc:
         log.warning('KaKam composition persistence skipped (%s)', type(exc).__name__)
-    if mode('WRITE') == 'off':
-        return
-    prefs = preferences(user)
-    if (
-        not prefs['enabled']
-        or prefs['policy'] != 'default'
-        or metadata.get('task')
-        or not is_saved_chat_id(metadata.get('chat_id'))
-        or not (model.get('info', {}).get('meta', {}).get('capabilities') or {}).get('memory', True)
-    ):
-        return
-    # Fetch the persisted USER message, not system-injected/retrieved content or
-    # assistant guesses. Ownership is checked again for event ingestion.
-    try:
-        if not await allowed(user):
-            return
-        if not await Chats.is_chat_owner(metadata['chat_id'], user.id):
-            return
-        message_id = metadata.get('user_message_id')
-        if not message_id:
-            return
-        original = await Chats.get_message_by_id_and_message_id(metadata['chat_id'], message_id)
-        evidence = text_content(original or {})[:8000]
-        if not evidence or (original or {}).get('role') != 'user':
-            return
-        # Shadow writes use a separate identity namespace and never enter live recall.
-        owner = 'shadow:' + user.id if mode('WRITE') == 'shadow' else user.id
-        async with asyncio.timeout(3):
-            await client.call(
-                'POST',
-                '/v1/events/turn-completed',
-                owner,
-                {'chat_id': metadata['chat_id'], 'message_id': message_id, 'evidence': evidence},
-            )
-    except Exception as exc:
-        log.warning('KaKam turn delivery failed (%s)', type(exc).__name__)
+    # Turn completion records usage only; it is not permission to persist knowledge.

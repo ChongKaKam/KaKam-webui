@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { settings } from '$lib/stores';
-	import { getPolicies, getMemories, addMemory, deleteMemory } from '../api';
+	import { getPolicies, getMemories, addMemory, deleteMemory, probeMemory } from '../api';
 	import type { Capabilities, Memory, MemoryPreferences } from '../types';
 	export let saveSettings: (value: Record<string, unknown>) => void | Promise<void>;
 	const dispatch = createEventDispatcher();
@@ -12,6 +12,19 @@
 	let error = '';
 	let busy = false;
 	let loading = true;
+	let probeStatus = '';
+	async function probe() {
+		busy = true;
+		probeStatus = '';
+		try {
+			await probeMemory();
+			probeStatus = 'Memory API、数据库与 embedding 调用成功。';
+		} catch (e) {
+			probeStatus = `连接测试失败：${String(e)}`;
+		} finally {
+			busy = false;
+		}
+	}
 
 	async function load() {
 		loading = true;
@@ -72,7 +85,9 @@
 
 <section class="mb-5 space-y-3 text-xs" aria-label="KaKam Memory 设置">
 	<div class="flex items-center justify-between">
-		<span class="font-medium">KaKam Memory</span><span class="text-gray-500">default · v1</span>
+		<span class="font-medium">KaKam Memory</span><span class="text-gray-500"
+			>Manager · default v2</span
+		>
 	</div>
 	{#if loading}
 		<p class="text-gray-500">正在检查 Memory 服务…</p>
@@ -128,8 +143,13 @@
 		>
 		<p class="text-gray-500 leading-relaxed">
 			System → 长期记忆 → 当前分支的 Session 历史 → 当前
-			Prompt。临时聊天不读写长期记忆。未配置抽取模型时，仅自动保存“请记住…”的明确请求。
+			Prompt。临时聊天不读写长期记忆。只有主动保存或确认模型建议才会写入。每个会话的优先/排除、压缩、分类和集合在
+			Context 侧栏管理。
 		</p>
+		<button type="button" class="underline" disabled={busy} on:click={probe}
+			>测试真实服务连接</button
+		>
+		{#if probeStatus}<p role="status" class="text-gray-500">{probeStatus}</p>{/if}
 		{#if capabilities.available}
 			<div class="border-t border-gray-200 pt-3 dark:border-gray-800">
 				<label class="block mb-2" for="kakam-memory-content">添加长期记忆</label>

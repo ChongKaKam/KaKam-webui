@@ -4,6 +4,7 @@
 	import { copyToClipboard } from '$lib/utils';
 	import { generateHandoff } from '../api';
 	import { buildHandoffInput } from '../service';
+	import { prepareHandoff } from '../../memory/api';
 	import type { HandoffHistory } from '../types';
 	import type { ContextDetails } from '../../memory/types';
 	import type { ChatParams } from '../../chat/effort';
@@ -12,6 +13,8 @@
 	export let defaultModel: string;
 	export let details: ContextDetails | null = null;
 	export let params: ChatParams = {};
+	export let sessionId = '';
+	export let managerEnabled = false;
 	let modelId = defaultModel;
 	let result = '';
 	let resultModel = '';
@@ -63,7 +66,11 @@
 		refreshTimeout();
 		deadline = setTimeout(expire, 600_000);
 		try {
-			const text = await generateHandoff(model, source.text, params, request.signal, $socket?.id, {
+			let sourceText = source.text;
+			if (managerEnabled && sessionId)
+				sourceText = (await prepareHandoff(sessionId, sourceText)).source;
+			if (request.signal.aborted) return;
+			const text = await generateHandoff(model, sourceText, params, request.signal, $socket?.id, {
 				onActivity: refreshTimeout,
 				onPhase: (next) => {
 					if (alive)

@@ -102,6 +102,7 @@ from open_webui.utils.json_codec import JSONCodec
 from open_webui.utils.mcp.client import MCPClient
 from open_webui.utils.memory import add_memory_context, review_memory_after_turn
 from open_webui.kakam.memory import hooks as kakam_memory
+from open_webui.kakam.memory.manager import compact_messages as kakam_compact_messages
 from open_webui.utils.misc import (
     add_or_update_system_message,
     add_or_update_user_message,
@@ -2469,7 +2470,7 @@ async def process_chat_payload(request, form_data, user, metadata, model):
         system_prompt = get_content_from_message(system_message) if system_message else ''
 
         try:
-            form_data['messages'], context_summary, _ = await compact_messages_for_request(
+            form_data['messages'], context_summary, _ = await kakam_compact_messages(
                 request,
                 user,
                 form_data.get('messages', []),
@@ -2477,6 +2478,7 @@ async def process_chat_payload(request, form_data, user, metadata, model):
                 form_data.get('model'),
                 compaction_models,
                 system_prompt,
+                fallback=compact_messages_for_request,
             )
             if context_summary:
                 form_data['messages'] = add_or_update_system_message(

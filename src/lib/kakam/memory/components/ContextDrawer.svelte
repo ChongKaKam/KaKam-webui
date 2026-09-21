@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount, tick } from 'svelte';
+	import { chatId } from '$lib/stores';
+	import SessionMemory from './SessionMemory.svelte';
 	import type { Composition, ContextDetails } from '../types';
 	import { getContextDetails } from '../api';
 	import { labels } from '../service';
@@ -25,6 +27,8 @@
 	let loading = false;
 	let error = '';
 	let alive = true;
+	const sessionId = $chatId;
+	$: sourceMessageId = history.messages[report.message_id]?.parentId ?? '';
 	async function load() {
 		if (!report.detail_id) return;
 		loading = true;
@@ -107,12 +111,23 @@
 			{#if handoff}<HandoffPanel
 					{history}
 					{params}
+					{sessionId}
+					managerEnabled={report.status === 'ready'}
 					{details}
 					messageId={report.message_id}
 					defaultModel={report.model}
 				/>{/if}
 		</div>
 		<PromptMatrix {report} />
+		{#if report.compaction}<p class="my-2 text-xs text-gray-500">
+				本轮压缩：{report.compaction.state} · 保留原始聊天记录
+			</p>{/if}
+		{#if report.omitted_preferred?.length}<p class="my-2 text-xs text-amber-600">
+				{report.omitted_preferred.length} 条优先记忆因预算或有效性限制未注入。
+			</p>{/if}
+		{#if sessionId && !sessionId.startsWith('local:') && !sessionId.startsWith('temporary:')}
+			<SessionMemory {sessionId} {sourceMessageId} />
+		{/if}
 		{#if report.status === 'unavailable'}
 			<div
 				role="status"

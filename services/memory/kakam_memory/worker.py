@@ -2,7 +2,6 @@ import asyncio
 import logging
 
 from .config import Settings
-from .providers import Providers
 from .repository import Repository
 
 log = logging.getLogger(__name__)
@@ -11,7 +10,7 @@ log = logging.getLogger(__name__)
 async def run():
     cfg = Settings()
     cfg.validate()
-    repo, providers = Repository(cfg.database_url), Providers(cfg)
+    repo = Repository(cfg.database_url)
     await asyncio.to_thread(repo.migrate)
     ticks = 0
     while True:
@@ -26,17 +25,9 @@ async def run():
             success = False
             try:
                 async with asyncio.timeout(450):
-                    for candidate in await providers.extract(job['evidence']):
-                        vector = await providers.embed(candidate['content'], job['owner'])
-                        await asyncio.to_thread(
-                            repo.add,
-                            job['owner'],
-                            candidate['content'],
-                            candidate['kind'],
-                            vector,
-                            cfg.embedding_version,
-                            (job['chat_id'], job['message_id']),
-                        )
+                    # v2 write authority comes only from manual actions/confirmed proposals.
+                    # Retain the worker for cleanup; legacy unapproved jobs must not write.
+                    pass
                 success = True
             except Exception as exc:
                 log.warning('Memory job failed (%s); retry is bounded', type(exc).__name__)
