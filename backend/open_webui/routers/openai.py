@@ -46,6 +46,7 @@ from open_webui.utils.headers import get_custom_headers, include_user_info_heade
 from open_webui.utils.json_codec import JSONCodec
 from open_webui.utils.misc import convert_logit_bias_input_to_json
 from open_webui.utils.model_ids import strip_provider_model_prefix
+from open_webui.kakam.providers.inventory import supplier_inventory, validate_suppliers
 from open_webui.kakam.chat.effort import apply_effort_override, convert_effort_to_responses
 from open_webui.utils.payload import (
     apply_model_params_to_body_openai,
@@ -568,6 +569,11 @@ async def update_config(request: Request, form_data: OpenAIConfigForm, user=Depe
     valid_keys = set(map(str, range(len(form_data.OPENAI_API_BASE_URLS))))
     api_configs = {key: value for key, value in form_data.OPENAI_API_CONFIGS.items() if key in valid_keys}
 
+    try:
+        validate_suppliers(api_configs)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
     await Config.upsert(
         {
             'openai.enable': form_data.ENABLE_OPENAI_API,
@@ -701,7 +707,10 @@ async def get_all_models_responses(request: Request, user: UserModel) -> list:
             model_ids = api_config.get('model_ids', [])
 
             if enable:
-                if len(model_ids) == 0:
+                inventory = supplier_inventory(api_config, idx)
+                if inventory is not None:
+                    request_tasks.append(asyncio.ensure_future(asyncio.sleep(0, inventory)))
+                elif len(model_ids) == 0:
                     request_tasks.append(get_models_request(request, url, api_keys[idx], user=user, config=api_config))
                 else:
                     model_list = {
@@ -749,7 +758,7 @@ async def get_all_models_responses(request: Request, user: UserModel) -> list:
 
                 if prefix_id:
                     model['id'] = f'{prefix_id}.{model.get("id", model.get("name", ""))}'
-                    if model.get('name'):
+                    if model.get('name') and not model.get('kakam_provider'):
                         model['name'] = f'{prefix_id}.{model["name"]}'
 
                 if tags:

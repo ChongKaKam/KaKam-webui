@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
+	import { supplierModelLabel } from '../../providers/service';
 	import { models, socket } from '$lib/stores';
 	import { copyToClipboard } from '$lib/utils';
 	import { generateHandoff } from '../api';
@@ -84,12 +85,12 @@
 					if (!alive || request.signal.aborted) return;
 					receivedText = true;
 					result = text;
-					resultModel = model.name || model.id;
+					resultModel = supplierModelLabel(model);
 				}
 			});
 			if (alive && !request.signal.aborted) {
 				result = text;
-				resultModel = model.name || model.id;
+				resultModel = supplierModelLabel(model);
 				status = '交接内容已生成，可直接编辑。';
 			}
 		} catch (cause) {
@@ -150,7 +151,7 @@
 			{#if !available.some((model) => model.id === modelId)}<option value={modelId} disabled
 					>当前模型不可用</option
 				>{/if}
-			{#each available as model}<option value={model.id}>{model.name || model.id}</option>{/each}
+			{#each available as model}<option value={model.id}>{supplierModelLabel(model)}</option>{/each}
 		</select>
 		{#if busy}<button type="button" on:click={() => controller?.abort()}>停止</button>{:else}<button
 				type="button"

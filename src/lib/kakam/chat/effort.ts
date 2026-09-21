@@ -3,6 +3,7 @@ export type Effort = (typeof effortLevels)[number];
 
 export type EffortModel = {
 	id: string;
+	kakam_provider?: { id: string; alias: string; model_id: string };
 	owned_by?: string;
 	direct?: boolean;
 	info?: {
@@ -33,7 +34,11 @@ export function supportedEfforts(model?: EffortModel): Effort[] {
 		);
 	}
 	if (declared === true) return ['low', 'medium', 'high'];
-	const id = (model.info?.base_model_id || model.id).toLowerCase();
+	const id = (
+		model.kakam_provider?.model_id ||
+		model.info?.base_model_id ||
+		model.id
+	).toLowerCase();
 	if (/^gpt-6-astra(?:-\d{4}-\d{2}-\d{2})?$/.test(id)) {
 		return ['low', 'medium', 'high', 'extra high'];
 	}

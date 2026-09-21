@@ -706,7 +706,7 @@
 		},
 		{
 			id: 'admin:connections',
-			title: 'Connections',
+			title: '模型供应管理',
 			keywords: [
 				'connections',
 				'ollama',
@@ -724,7 +724,7 @@
 		},
 		{
 			id: 'admin:models',
-			title: 'Models',
+			title: '模型管理',
 			keywords: [
 				'models',
 				'pull',

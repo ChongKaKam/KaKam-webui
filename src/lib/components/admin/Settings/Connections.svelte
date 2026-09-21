@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SupplierSettings from '$lib/kakam/providers/components/SupplierSettings.svelte';
 	import { cloudUi } from '$lib/kakam/shared/cloud-ui';
 	import { toast } from 'svelte-sonner';
 	import { createEventDispatcher, onMount, getContext } from 'svelte';
@@ -155,6 +156,7 @@
 	};
 
 	onMount(async () => {
+		if (!cloudUi.ollamaConnections) return;
 		if ($user?.role === 'admin') {
 			let ollamaConfig: any = {};
 			let openaiConfig: any = {};
@@ -223,6 +225,10 @@
 		await config.set(await getBackendConfig());
 	};
 </script>
+
+{#if !cloudUi.ollamaConnections}
+	<SupplierSettings on:save={() => dispatch('save')} />
+{:else}
 
 <AddConnectionModal
 	bind:show={showAddOpenAIConnectionModal}
@@ -442,3 +448,5 @@
 		</button>
 	</div>
 </form>
+
+{/if}

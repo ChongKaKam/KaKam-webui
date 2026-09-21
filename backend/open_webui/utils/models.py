@@ -10,6 +10,7 @@ from open_webui.config import (
 )
 from open_webui.env import BYPASS_MODEL_ACCESS_CONTROL, ENABLE_PLUGINS, GLOBAL_LOG_LEVEL, REDIS_KEY_PREFIX
 from open_webui.functions import get_function_models
+from open_webui.kakam.providers.inventory import inherit_supplier
 from open_webui.models.access_grants import AccessGrants
 from open_webui.models.config import Config
 from open_webui.models.functions import Functions
@@ -230,6 +231,7 @@ async def get_all_models(request, refresh: bool = False, user: UserModel = None)
                 'owned_by': owned_by,
                 'connection_type': connection_type,
                 'preset': True,
+                **inherit_supplier(base_model),
                 **({'pipe': pipe} if pipe is not None else {}),
                 **({'provider': base_model.get('provider')} if base_model and base_model.get('provider') else {}),
                 **({'loaded': base_model.get('loaded')} if base_model and base_model.get('loaded') is not None else {}),

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { supplierModelLabel } from '$lib/kakam/providers/service';
 	import CascadeModelSelector from '$lib/kakam/chat/components/CascadeModelSelector.svelte';
 	import type { ChatParams } from '$lib/kakam/chat/effort';
 	export let cascade = false;
@@ -72,7 +73,7 @@
 				{#if cascade}
 					<CascadeModelSelector
 						bind:this={selector}
-						items={$models.map((model) => ({ value: model.id, label: model.name, model }))}
+						items={$models.map((model) => ({ value: model.id, label: supplierModelLabel(model), model }))}
 						bind:values={selectedModels}
 						bind:params
 						bind:compareEnabled={compareModels}
@@ -92,7 +93,7 @@
 						placeholder={$i18n.t('Select a model')}
 						items={$models.map((model) => ({
 							value: model.id,
-							label: model.name,
+							label: supplierModelLabel(model),
 							model: model
 						}))}
 						{pinModelHandler}

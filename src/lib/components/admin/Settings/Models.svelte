@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ModelRoutingSection from '$lib/kakam/providers/components/ModelRoutingSection.svelte';
 	import { cloudUi } from '$lib/kakam/shared/cloud-ui';
 	import { marked } from 'marked';
 	import Sortable from 'sortablejs';
@@ -704,13 +705,14 @@
 		<div class="flex h-full min-h-0 flex-col text-sm">
 			<div class="mb-2 flex items-center justify-between">
 				<h2 class="text-sm font-medium text-gray-900 dark:text-white">
-					{$i18n.t('Models')}
+					模型管理
 					<span class="ml-2 font-normal text-gray-500 dark:text-gray-500">
 						{filteredModels.length}
 					</span>
 				</h2>
 			</div>
 
+			<ModelRoutingSection />
 			{#if $user?.role === 'admin'}
 				<input
 					id="models-import-input"
@@ -1005,7 +1007,7 @@
 											<div
 												class="flex min-w-0 items-center gap-1.5 text-[0.8125rem] font-normal leading-4"
 											>
-												<span class="min-w-0 truncate">{model.name}</span>
+												<span class="min-w-0 truncate">{model.name}{#if model.kakam_provider}<span class="text-gray-500"> · {model.kakam_provider.alias}</span>{/if}</span>
 
 												<span
 													class="shrink-0 text-[0.6875rem] font-normal leading-4 {modelAccessClass(

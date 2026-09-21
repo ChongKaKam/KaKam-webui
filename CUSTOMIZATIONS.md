@@ -224,3 +224,42 @@ interrupted streams retain partial output with an incomplete warning. Results ar
 editable and remain only in the
 open drawer until copied or exported as Markdown; closing the drawer aborts the
 client request. UI validation uses mock responses rather than production chats.
+
+## Supplier management and model allowlists
+
+Custom implementation: `src/lib/kakam/providers/` and
+`backend/open_webui/kakam/providers/`. Reuses the admin-only `/openai/verify`
+models probe, native connection configuration persistence/cache invalidation,
+and native model activation and access grants. No new dependencies or tables.
+
+| Upstream file | Reason / delegated behavior |
+| --- | --- |
+| `src/lib/components/admin/Settings/Connections.svelte` | Mount project-owned SupplierSettings in Cloud UI mode; skip the legacy loader in that mode. The native Ollama-compatible settings remain available under the existing policy. The cloud UI omits the base-model cache switch; underlying caching remains supported. |
+| `src/lib/components/chat/SettingsModal.svelte` | Rename the admin AI entries to 模型供应管理 and 模型管理. |
+| `src/lib/components/admin/Settings/Models.svelte` | Rename the heading, mount an empty 模型路由 section above the list, and show supplier aliases alongside model names. Existing editor, activation, public/private and user/group grants are unchanged. |
+| `src/lib/components/chat/ModelSelector.svelte` | Delegate model labels to the supplier-aware helper for both cascading and native selectors. IDs and selection behavior remain unchanged. |
+| `backend/open_webui/routers/openai.py` | Validate supplier inventories before saving and supply only selected cached models. Keep original display names while applying native provider ID prefixes. Existing authentication, config storage, cache invalidation and request routing remain authoritative. |
+| `backend/open_webui/utils/models.py` | Carry safe supplier provenance into presets derived from a supplier model. |
+
+New suppliers receive immutable UUID-based ID prefixes, independently of their
+editable aliases. The native dispatcher strips only the selected connection's
+prefix before calling its upstream. Safe `kakam_provider` metadata contains only
+supplier ID, alias and original model ID, never URL, credentials or headers.
+Custom Effort recognition uses that original ID; explicit capability metadata
+still wins. Hand-off model choices show the supplier label as well.
+
+An editor requires successful model discovery before new credentials or a legacy
+connection can be saved into the pool. Transport edits invalidate the probe;
+failed/aborted probes cannot authorize a save. A saved, unchanged connection can
+reuse its selected-model snapshot for alias and allowlist edits. Empty managed
+allowlists load zero models, rather than triggering native auto-discovery.
+Existing connection IDs and model/access records are not automatically migrated
+or removed. Legacy connections adopt the explicit allowlist when edited and
+saved; changing a legacy prefix is an explicit advanced operation with an ID and
+permission warning. New unconfigured models follow native admin-only visibility
+until the administrator grants access in Model Management. Removing a supplier
+or a model from its allowlist does not erase its history or saved access settings.
+
+Validation covers duplicate provider model IDs, prefix dispatch, empty pools,
+snapshot consistency, safe metadata, and the native per-model access filter.
+UI probes use a local mock server; no production supplier configuration is changed.
