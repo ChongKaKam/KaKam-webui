@@ -1,11 +1,19 @@
 # Upstream integration points
 
+## Resource-aware Docker deployment
+
+`Dockerfile`: replace the commented Node heap option with build-only
+`NODE_MAX_OLD_SPACE_SIZE` (default 6144MB). The custom `compose.kakam.yaml` passes
+`KAKAM_BUILD_NODE_HEAP_MB`; `deploy.sh` checks resources, builds serially, backs up
+databases/configuration, and waits for container health. See `deploy/README.md`.
+
 ## Administrator Memory provider configuration
 
 | Upstream file | Reason / delegated behavior |
 | --- | --- |
 | `backend/open_webui/main.py` | Register the admin-only Memory configuration BFF router. |
 | `src/lib/components/chat/SettingsModal.svelte` | Add the admin AI / Memory service entry and mount `src/lib/kakam/memory/admin/components/MemoryAdminSettings.svelte`. |
+| `src/lib/components/admin/Settings/Interface.svelte` | Wrap native compaction controls with the custom `CompactionOwner` component: display Manager ownership and a settings link when KaKam is enabled, otherwise preserve the original controls and saved values. Ownership is read from the authenticated BFF, independently of Memory service availability. |
 
 Provider settings, validation, encrypted persistence and live configuration snapshots belong to the independent
 Memory service; the BFF only authenticates admins and signs internal requests. `cryptography` is added to the

@@ -64,6 +64,7 @@ services:
       context: .
       args:
         USE_SLIM: "true"
+        NODE_MAX_OLD_SPACE_SIZE: ${KAKAM_BUILD_NODE_HEAP_MB:-6144}
     image: kakam-webui:local
     environment:
       WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:?Set WEBUI_SECRET_KEY}

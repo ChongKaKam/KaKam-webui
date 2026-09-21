@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { resetProvider, saveProvider, testProvider } from '../api';
-	import { payload, toForm } from '../service';
-	import type { ConfigView, ProbeResult, ProviderKind, ProviderView } from '../types';
+	import { discoverModels, resetProvider, saveProvider, testProvider } from '../api';
+	import { discoverySource, payload, toForm } from '../service';
+	import type { ConfigView, ModelsResult, ProbeResult, ProviderKind, ProviderView } from '../types';
+	import ProviderDiagnostics from './ProviderDiagnostics.svelte';
 
 	export let kind: ProviderKind;
 	export let value: ProviderView;
@@ -12,13 +13,26 @@
 	let error = '';
 	let result: ProbeResult | null = null;
 	let confirmReset = false;
+	let discovery: ModelsResult | null = null;
+	let previousSource = '';
+	$: source = discoverySource(form);
+	$: if (source !== previousSource) {
+		previousSource = source;
+		discovery = null;
+		result = null;
+	}
 
-	async function run(action: 'save' | 'test' | 'reset') {
+	async function run(action: 'save' | 'test' | 'reset' | 'discover') {
+		if (busy) return;
 		busy = action;
 		error = '';
 		result = null;
 		try {
-			if (action === 'test') result = await testProvider(kind, payload(form));
+			if (action === 'discover') {
+				discovery = null;
+				discovery = await discoverModels(kind, payload(form));
+				result = discovery;
+			} else if (action === 'test') result = await testProvider(kind, payload(form));
 			else {
 				const updated =
 					action === 'save'
@@ -49,6 +63,13 @@
 			? '由 Memory Server 调用，用于生成 Session 摘要；不是聊天主模型。'
 			: '用于保存记忆时生成向量，以及召回时的语义检索。'}
 	</p>
+	<ProviderDiagnostics
+		{busy}
+		{error}
+		{result}
+		onTest={() => run('test')}
+		onDiscover={() => run('discover')}
+	/>
 	<form
 		on:submit|preventDefault={() => run('save')}
 		on:input={() => (result = null)}
@@ -84,6 +105,25 @@
 						placeholder="供应商的模型 ID"
 					/>
 				</label>
+				{#if discovery?.ok && discovery.models.length}
+					<label class="block text-sm"
+						>探测到的模型（{discovery.models.length}）
+						<select class="field" bind:value={form.model}>
+							<option value="">请选择模型</option>
+							{#if form.model && !discovery.models.includes(form.model)}<option value={form.model}
+									>{form.model}（手动填写）</option
+								>{/if}
+							{#each discovery.models as model}<option value={model}>{model}</option>{/each}
+						</select>
+						<span class="block mt-1 text-xs text-gray-500"
+							>列表不区分模型能力，请选择适合{kind === 'context'
+								? '文本摘要'
+								: 'Embedding'}的模型并测试。{discovery.truncated
+								? '仅显示部分模型；仍可手动填写其他模型 ID。'
+								: ''}</span
+						>
+					</label>
+				{/if}
 				{#if kind === 'context'}
 					<label class="block text-sm"
 						>API 协议
@@ -158,9 +198,6 @@
 				<button class="action primary" type="submit" disabled={!writable}
 					>{busy === 'save' ? '保存中…' : '保存配置'}</button
 				>
-				<button class="action" type="button" on:click={() => run('test')}
-					>{busy === 'test' ? '测试中…' : '测试当前填写配置'}</button
-				>
 				<button
 					class="action"
 					type="button"
@@ -180,21 +217,6 @@
 			{/if}
 		</fieldset>
 	</form>
-	{#if error}<p role="alert" class="mt-3 text-sm text-red-600 dark:text-red-400 break-words">
-			{error}
-		</p>{/if}
-	{#if result}
-		<p
-			role="status"
-			class="mt-3 text-sm break-words"
-			class:text-green-600={result.ok}
-			class:text-red-500={!result.ok}
-		>
-			{result.message} · {result.elapsed_ms} ms{result.http_status
-				? ` · HTTP ${result.http_status}`
-				: ''}
-		</p>
-	{/if}
 	<p class="mt-3 text-xs text-gray-500">
 		测试不会保存配置，仅发送合成文本，可能产生少量模型调用费用。
 	</p>

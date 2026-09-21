@@ -9,6 +9,7 @@
 	let notice = '';
 	let loadRevision = 0;
 	const kinds: ProviderKind[] = ['context', 'embedding'];
+	let active: ProviderKind = 'context';
 	async function load() {
 		loading = true;
 		error = '';
@@ -39,6 +40,28 @@
 	<p class="text-sm text-gray-500">
 		管理员配置对当前租户的所有用户生效，记忆内容仍按用户隔离。此处与个人 Memory Policy 设置独立。
 	</p>
+	<nav aria-label="模型服务类型" class="grid grid-cols-2 gap-2">
+		{#each kinds as kind}
+			<button
+				type="button"
+				aria-pressed={active === kind}
+				class="rounded-xl border p-3 text-left min-w-0 {active === kind
+					? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30'
+					: 'border-gray-200 dark:border-gray-800'}"
+				on:click={() => (active = kind)}
+			>
+				<span class="block text-sm font-semibold"
+					>{kind === 'context' ? 'Context' : 'Embedding'}</span
+				>
+				<span class="block text-xs text-gray-500"
+					>{kind === 'context' ? '上下文压缩模型' : '记忆向量模型'}</span
+				>
+			</button>
+		{/each}
+	</nav>
+	<p class="text-xs text-gray-500">
+		没有独立自动抽取模型。用户主动要求记住时，由当前聊天模型调用记忆建议工具（需支持工具调用），用户确认后保存；手动录入不调用抽取模型。
+	</p>
 	{#if loading}<p role="status" class="text-sm">读取中…</p>{/if}
 	{#if error}<p role="alert" class="text-sm text-red-500 break-words">{error}</p>{/if}
 	{#if notice}<p role="status" class="text-sm text-green-600">{notice}</p>{/if}
@@ -50,14 +73,16 @@
 			</div>
 		{/if}
 		{#each kinds as kind}
-			{#key `${kind}:${loadRevision}:${config.providers[kind].revision}`}
-				<ProviderSettings
-					{kind}
-					value={config.providers[kind]}
-					writable={config.write_enabled}
-					onSaved={saved}
-				/>
-			{/key}
+			<div hidden={active !== kind}>
+				{#key `${kind}:${loadRevision}:${config.providers[kind].revision}`}
+					<ProviderSettings
+						{kind}
+						value={config.providers[kind]}
+						writable={config.write_enabled}
+						onSaved={saved}
+					/>
+				{/key}
+			</div>
 		{/each}
 	{/if}
 	<p class="text-xs text-gray-500">

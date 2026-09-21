@@ -45,6 +45,11 @@ def test_real_http_bridge(repo, monkeypatch):
     upstream = FastAPI()
     requests = []
 
+    @upstream.get('/v1/models')
+    async def model_list(request: Request):
+        assert request.headers['Authorization'] == 'Bearer fixture-only'
+        return {'data': [{'id': 'test'}]}
+
     @upstream.post('/v1/embeddings')
     async def embeddings(request: Request):
         body = await request.json()
@@ -74,6 +79,9 @@ def test_real_http_bridge(repo, monkeypatch):
                 form = {k: v for k, v in view.items() if k not in ('source', 'api_key_set')}
                 saved = await client.call('PUT', '/v1/admin/config/embedding', 'admin', form, admin=True)
                 assert saved['providers']['embedding']['source'] == 'database'
+                discovered = await client.call('POST', '/v1/admin/config/embedding/models', 'admin',
+                                               {**form, 'model': ''}, admin=True)
+                assert discovered['ok'] and discovered['models'] == ['test']
                 added = await client.call('POST', '/v1/memories', 'alice', {'content': '中文回答'})
                 assert added['created']
                 recalled = await client.call(

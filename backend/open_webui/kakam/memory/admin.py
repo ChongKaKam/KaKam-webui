@@ -43,6 +43,13 @@ async def read(response: Response, user=Depends(get_admin_user)):
     return await proxy('GET', '', user, response)
 
 
+@router.get('/ownership')
+async def ownership(response: Response, user=Depends(get_admin_user)):
+    # Ownership follows the BFF switch, even if the Memory service is unavailable.
+    response.headers['Cache-Control'] = 'no-store'
+    return {'manager_enabled': client.enabled()}
+
+
 @router.put('/{kind}')
 async def save(kind: ProviderKind, body: dict, response: Response, user=Depends(get_admin_user)):
     return await proxy('PUT', f'/{kind}', user, response, body)
@@ -56,3 +63,8 @@ async def reset(kind: ProviderKind, body: dict, response: Response, user=Depends
 @router.post('/{kind}/test')
 async def test(kind: ProviderKind, body: dict, response: Response, user=Depends(get_admin_user)):
     return await proxy('POST', f'/{kind}/test', user, response, body)
+
+
+@router.post('/{kind}/models')
+async def models(kind: ProviderKind, body: dict, response: Response, user=Depends(get_admin_user)):
+    return await proxy('POST', f'/{kind}/models', user, response, body)

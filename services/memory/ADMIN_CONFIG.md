@@ -10,6 +10,24 @@
 - 两组配置独立保存，展示“环境变量 / 数据库配置”来源，可测试未保存草稿或恢复环境变量。
 - 不再提供自动抽取模型配置及抽取调用。长期记忆仍需用户手动保存或确认模型建议。
 
+页面顶部通过 Context / Embedding 按钮切换两种模型，切换保留未保存草稿。
+“检测连接 / 获取模型”使用当前草稿地址和密钥调用供应商 `GET /models`，无需先选择模型。
+它不执行推理、不写数据库、不自动选择模型，列表不代表摘要或 embedding 能力。
+选择后需点击“测试模型调用”验证实际用途（该测试可能有模型调用费用），再保存配置。
+不支持列表接口（404/405）时仍可手动填写模型 ID；其他失败显示脱敏状态码或网络提示。
+发现请求最多 20 秒，响应最多 1 MiB，只返回最多 500 个合法、去重的模型 ID；不跟随重定向，
+不发送聊天或记忆内容，不回传供应商附加字段，分页/数量截断会在 UI 提示。
+接口契约参照 [OpenAI Models API](https://developers.openai.com/api/reference/ruby/resources/models)。
+
+新增 BFF `GET /api/custom/memory/admin/config/ownership` 返回是否由 Manager 接管（仅管理员）。
+列表探测经 `POST /api/custom/memory/admin/config/{context|embedding}/models` 转发到
+内部 `POST /v1/admin/config/{context|embedding}/models`，沿用管理员鉴权、签名及禁止缓存。
+启用 KaKam 时，原“管理员 → 界面 → 上下文压缩”区域标注接管并隐藏原生控件；禁用后恢复原控件。
+服务离线不会把接管状态错误地切回原生压缩，状态查询失败时显示重试，不修改原配置。
+
+“记忆建议”不是隐藏的自动抽取任务：用户明确要求记住时，由当前聊天模型调用
+`kakam_propose_memory`（需要模型支持且使用工具调用），仍需用户确认；手动录入直接校验保存。
+
 Base URL 是 **Memory Server 调用模型供应商**的地址，例如 `https://provider.example/v1`，
 不是 WebUI 地址，也不是 Memory Server 的服务地址；不要填写完整 `/chat/completions` 或 `/responses`。
 Chat Completions 发送 `messages`、`max_completion_tokens`；Responses 发送 `instructions`、`input`、
@@ -69,3 +87,10 @@ Session 中显式“优先使用”的条目仍可按 ID 加入上下文，它�
 但仍可浏览、删除记录，显式按 ID 选择的记忆不依赖向量。禁用 Context 不再生成新摘要，已有摘要仍可复用。
 浏览器召回还受 WebUI `KAKAM_MEMORY_TIMEOUT_MS` 预算限制，不等于这里的供应商超时。
 恢复旧服务版本前，应恢复对应旧版本数据库备份；不要让旧 worker 在已升级库上重新执行抽取。
+
+## 本次验证（2026-09-21）
+
+- Memory 后端 62 项测试通过，包含独立 PostgreSQL、签名管理请求的真实 HTTP 链路、模型列表大小限制与错误脱敏。
+- Memory / handoff 前端 35 项测试通过，生产构建通过；全仓库类型检查仍有既有错误，本次涉及的自定义管理组件与 Interface 未报告错误。
+- 本地模拟服务下验证了手机与桌面布局、空模型名探测、模型选择、切换配置保留草稿、供应商不支持列表，以及启用/关闭 KaKam 的接管展示。
+- 上述验证未调用生产模型供应商；部署后需分别执行“检测连接 / 获取模型”和“测试模型调用”。

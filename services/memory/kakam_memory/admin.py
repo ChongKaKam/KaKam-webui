@@ -10,7 +10,8 @@ from uuid import uuid4
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from .provider_config import ConfigView, ProbeResult, ProviderForm, ProviderKind, ResetForm
+from .model_discovery import list_models
+from .provider_config import ConfigView, ModelsResult, ProbeResult, ProviderForm, ProviderKind, ResetForm
 from .providers import Providers
 
 
@@ -49,15 +50,34 @@ def router(cfg, store, owner):
 
     @api.post('/{kind}/test', response_model=ProbeResult)
     async def test(kind: ProviderKind, body: ProviderForm, user=Depends(administrator)):
-        value = await asyncio.to_thread(store.candidate, user, kind, body)
+        return await probe(kind, body, user)
+
+    @api.post('/{kind}/models', response_model=ModelsResult)
+    async def models(kind: ProviderKind, body: ProviderForm, user=Depends(administrator)):
+        return await probe(kind, body, user, listing=True)
+
+    async def probe(kind, body, user, listing=False):
+        draft = body.model_copy(update={'enabled': False}) if listing else body
+        value = await asyncio.to_thread(store.candidate, user, kind, draft)
+        if not value['base_url']:
+            raise HTTPException(422, 'A base URL is required')
         # Probe the draft, without persisting or using private conversation data.
         value['enabled'] = True
-        effective = await asyncio.to_thread(store.settings_for, user, kind, value)
-        provider = Providers(effective)
+        if not listing:
+            effective = await asyncio.to_thread(store.settings_for, user, kind, value)
+            provider = Providers(effective)
         start = time.monotonic()
         status, message, http_status = 'ready', '连接成功，返回格式已验证', None
+        extra = {'models': [], 'truncated': False} if listing else {}
         try:
-            if kind == 'context':
+            if listing:
+                extra = await list_models(value)
+                message = (
+                    '连接成功，已读取供应商模型列表'
+                    if extra['models']
+                    else '连接成功，但供应商返回了空列表；可手动填写模型 ID'
+                )
+            elif kind == 'context':
                 await provider.summarize('', 'Synthetic connection test: the next step is to verify configuration.')
             else:
                 await provider.embed(f'Memory configuration check {uuid4()}', user)
@@ -69,13 +89,21 @@ def router(cfg, store, owner):
                 404: ('not_found', '检查 Base URL、模型名称和 API 协议'),
                 429: ('rate_limited', '请求限流或额度不足'),
             }.get(http_status, ('provider_error', '模型服务拒绝请求；请核对模型、协议和参数支持'))
+            if listing and http_status in (404, 405):
+                status, message = (
+                    'unsupported',
+                    '供应商不支持 /models 列表接口或地址不正确；可手动填写模型 ID 并测试模型调用',
+                )
         except (httpx.TimeoutException, TimeoutError):
             status, message = 'timeout', '请求超时；检查网络或调整超时时间'
         except httpx.RequestError:
             status, message = 'connection_failed', '无法连接模型服务；检查地址、DNS、TLS 或网络'
         except (ValueError, KeyError, IndexError, TypeError):
             status, message = 'invalid_response', '返回格式、向量维度或摘要不符合要求；也可能模型未配置'
+            if listing:
+                message = '模型列表格式无效或超过大小限制；可手动填写模型 ID'
         return {
+            **extra,
             'ok': status == 'ready',
             'status': status,
             'message': message,

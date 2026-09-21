@@ -1,5 +1,5 @@
 import { WEBUI_BASE_URL } from '$lib/constants';
-import type { ConfigView, ProbeResult, ProviderForm, ProviderKind } from './types';
+import type { ConfigView, ModelsResult, ProbeResult, ProviderForm, ProviderKind } from './types';
 
 async function request<T>(path = '', method = 'GET', body?: unknown): Promise<T> {
 	const response = await fetch(`${WEBUI_BASE_URL}/api/custom/memory/admin/config${path}`, {
@@ -18,6 +18,9 @@ async function request<T>(path = '', method = 'GET', body?: unknown): Promise<T>
 }
 
 export const getConfig = () => request<ConfigView>();
+export const getOwnership = () => request<{ manager_enabled: boolean }>('/ownership');
+export const discoverModels = (kind: ProviderKind, form: ProviderForm) =>
+	request<ModelsResult>(`/${kind}/models`, 'POST', form);
 export const saveProvider = (kind: ProviderKind, form: ProviderForm) =>
 	request<ConfigView>(`/${kind}`, 'PUT', form);
 export const testProvider = (kind: ProviderKind, form: ProviderForm) =>

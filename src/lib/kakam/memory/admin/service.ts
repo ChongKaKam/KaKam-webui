@@ -18,3 +18,8 @@ export function toForm(value: ProviderView): ProviderForm {
 export function payload(form: ProviderForm): ProviderForm {
 	return { ...form, api_key: form.api_key_action === 'replace' ? form.api_key : '' };
 }
+
+// In-memory only. Never log or persist this key; changing credentials invalidates a discovered list.
+export function discoverySource(form: ProviderForm): string {
+	return JSON.stringify([form.base_url, form.api_key_action, payload(form).api_key, form.protocol]);
+}

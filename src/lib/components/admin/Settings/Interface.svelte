@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CompactionOwner from '$lib/kakam/memory/admin/components/CompactionOwner.svelte';
 	import { getModels, getTaskConfig, updateTaskConfig } from '$lib/apis';
 	import { getChatConfig, updateChatConfig } from '$lib/apis/chats';
 	import { createEventDispatcher, onMount, getContext } from 'svelte';
@@ -268,6 +269,7 @@
 					<Switch bind:state={chatConfig.ENABLE_TOOL_PERMISSIONS} ariaLabelledbyId={labelId} />
 				</AdminSettingRow>
 
+				<CompactionOwner>
 				<AdminSettingRow
 					label={$i18n.t('Context Compaction')}
 					description={$i18n.t(
@@ -374,6 +376,7 @@
 						</div>
 					</AdminSettingField>
 				{/if}
+				</CompactionOwner>
 			</AdminSettingSection>
 
 			<AdminSettingSection title={$i18n.t('Generation')}>

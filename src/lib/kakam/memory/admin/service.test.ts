@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { payload, toForm } from './service';
+import { discoverySource, payload, toForm } from './service';
 import type { ProviderView } from './types';
 
 const value: ProviderView = {
@@ -15,6 +15,16 @@ const value: ProviderView = {
 };
 
 describe('admin Memory configuration', () => {
+	it('invalidates discovery on endpoint or credential changes but not model selection', () => {
+		const form = toForm(value);
+		const source = discoverySource(form);
+		expect(discoverySource({ ...form, model: 'other' })).toBe(source);
+		expect(discoverySource({ ...form, base_url: 'https://other.invalid/v1' })).not.toBe(source);
+		expect(discoverySource({ ...form, api_key_action: 'clear' })).not.toBe(source);
+		expect(discoverySource({ ...form, api_key_action: 'replace', api_key: 'fixture' })).not.toBe(
+			source
+		);
+	});
 	it('never pre-fills a stored key and strips read-only fields', () => {
 		const form = toForm(value);
 		expect(form.api_key).toBe('');

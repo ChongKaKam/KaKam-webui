@@ -93,10 +93,16 @@ class ProbeResult(BaseModel):
         'timeout',
         'connection_failed',
         'invalid_response',
+        'unsupported',
     ]
     message: str
     http_status: int | None
     elapsed_ms: int
+
+
+class ModelsResult(ProbeResult):
+    models: list[str] = Field(default_factory=list)
+    truncated: bool = False
 
 
 def tenant(owner):

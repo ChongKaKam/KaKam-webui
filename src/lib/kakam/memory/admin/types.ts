@@ -25,3 +25,4 @@ export type ProbeResult = {
 	http_status: number | null;
 	elapsed_ms: number;
 };
+export type ModelsResult = ProbeResult & { models: string[]; truncated: boolean };
