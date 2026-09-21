@@ -24,6 +24,12 @@ build_images() {
   compose build memory-api || return
 }
 
+smoke_images() {
+  # No network, production credentials, volume mounts or database writes.
+  docker run --rm --network none --entrypoint python kakam-memory:local \
+    -c 'import kakam_memory.admin, kakam_memory.manager' || return
+}
+
 backup_data() {
   local backup_parent="$PWD/../kakam-deploy-backups" backup_dir container_id service
   mkdir -p "$backup_parent" || return
@@ -68,6 +74,7 @@ with tempfile.TemporaryDirectory() as tmp:
 deploy_release() {
   echo "串行构建；构建失败时不重建正在运行的容器。"
   build_images || return
+  smoke_images || return
   backup_data || return
   echo "镜像与备份就绪，更新容器并等待健康检查（最多 ${KAKAM_DEPLOY_WAIT_SECONDS} 秒）。"
   compose up -d --no-build --wait --wait-timeout "$KAKAM_DEPLOY_WAIT_SECONDS" || return

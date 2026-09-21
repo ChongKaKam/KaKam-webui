@@ -20,9 +20,10 @@ compose() {
   if [[ "$*" == "${fail_at:-}" ]]; then return 7; fi
 }
 backup_data() { echo BACKUP; return "${backup_status:-0}"; }
+smoke_images() { echo SMOKE; return "${smoke_status:-0}"; }
 git() { echo test-commit; }
 output=$(deploy_release)
-assert_contains "$output" $'COMPOSE build open-webui\nCOMPOSE build memory-api\nBACKUP'
+assert_contains "$output" $'COMPOSE build open-webui\nCOMPOSE build memory-api\nSMOKE\nBACKUP'
 assert_contains "$output" 'COMPOSE up -d --no-build --wait --wait-timeout 300'
 assert_contains "$output" 'COMPOSE ps'
 assert_absent "$output" '--build'
@@ -35,6 +36,12 @@ for fail_at in 'build open-webui' 'build memory-api'; do
   passed=$((passed + 1))
 done
 fail_at=''
+smoke_status=9
+if output=$(deploy_release); then exit 1; fi
+assert_absent "$output" 'BACKUP'
+assert_absent "$output" 'COMPOSE up'
+passed=$((passed + 1))
+smoke_status=0
 backup_status=8
 if output=$(deploy_release); then exit 1; fi
 assert_absent "$output" 'COMPOSE up'

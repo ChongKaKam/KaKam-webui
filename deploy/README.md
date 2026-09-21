@@ -20,7 +20,7 @@ bash deploy.sh
 1. 校验 Compose 配置但不打印展开后的密钥；检查可用 RAM + 空闲 Swap 和磁盘。
 2. Node 堆默认 6144MB，另预留 2048MB；磁盘至少空闲 10GB。
 3. 禁用 Compose/Bake 并行，先构建 WebUI，再构建一次 Memory 共用镜像。
-4. 构建和备份都成功后才 `up --no-build --wait`，不重复构建，不先 `down`。
+4. 先以镜像默认的非 root 用户、禁用网络运行 Memory 导入冒烟检查；构建、检查和备份都成功后才 `up --no-build --wait`，不重复构建，不先 `down`。
 5. 健康检查失败会返回非零状态，不会谎报成功或自动回滚数据库。
 
 `--check` 不构建、不备份、不重启。资源预检查是保守估算，不保证峰值内存；其他服务
@@ -62,3 +62,7 @@ docker compose --env-file .env.kakam -f compose.kakam.yaml logs --tail=80 open-w
 不能仅回滚镜像后直接让旧版本写入新数据库。
 
 脚本回归检查：`bash deploy/test-deploy.sh`（模拟命令，不连接 Docker 或 SSH）。
+
+Memory Dockerfile 会显式规范代码/迁移文件的读取权限，并在构建时以运行用户检查导入。
+这避免服务器 Git checkout 使用 `umask 077` 时，把 root 拥有的 `600` 文件原样复制
+进镜像导致非 root 服务启动失败。备份仍使用 `077`，不放宽任何密钥或数据库的权限。
