@@ -84,6 +84,16 @@ body {
 .kakam-composer .kakam-model-slot {
 	max-width: min(22rem, 55vw);
 }
+.kakam-composer .kakam-composer-primary-action {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 1.875rem;
+	height: 1.875rem;
+	padding: 0;
+	transition-property: color, background-color, border-color, opacity;
+}
 .kakam-codeblock {
 	min-width: 0;
 	border-color: var(--kakam-border);
@@ -150,7 +160,7 @@ body {
 	margin-bottom: 1.25rem;
 }
 .kakam-settings-content section h3 {
-	font-size: 0.875rem;
+	font-size: 1rem;
 	font-weight: 600;
 	color: var(--kakam-text);
 	margin-bottom: 0.875rem;
@@ -164,6 +174,25 @@ body {
 	color: var(--kakam-muted);
 	font-size: 0.75rem;
 	margin-bottom: 0.6rem;
+}
+.kakam-settings-content .kakam-setting-label {
+	font-size: 0.875rem;
+	font-weight: 600;
+	line-height: 1.5;
+	color: var(--kakam-text);
+}
+.kakam-settings-content .kakam-setting-description {
+	font-size: 0.8125rem;
+	font-weight: 400;
+	line-height: 1.6;
+	color: var(--kakam-muted);
+}
+.kakam-settings-content .kakam-setting-section-title {
+	font-size: 1rem;
+	font-weight: 600;
+	line-height: 1.5;
+	color: var(--kakam-text);
+	margin-bottom: 0.5rem;
 }
 
 @media (max-width: 767px) {
@@ -186,11 +215,22 @@ body {
 	}
 	.kakam-composer .kakam-composer-actions {
 		margin-left: auto;
-		flex-wrap: wrap;
+		flex: 1 1 0;
+		flex-wrap: nowrap;
 		justify-content: flex-end;
 	}
+	.kakam-composer .kakam-composer-actions > :not(.kakam-model-slot) {
+		flex-shrink: 0;
+	}
 	.kakam-composer .kakam-model-slot {
+		flex: 0 1 auto;
 		max-width: min(18rem, calc(100vw - 6.5rem));
+	}
+	.kakam-composer .kakam-composer-primary-action {
+		width: 2.75rem;
+		height: 2.75rem;
+		min-width: 2.75rem;
+		min-height: 2.75rem;
 	}
 	.kakam-composer
 		:is(

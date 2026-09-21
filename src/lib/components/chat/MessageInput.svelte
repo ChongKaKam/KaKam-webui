@@ -2560,7 +2560,7 @@
 											<Tooltip content={$i18n.t('Stop')}>
 												<button
 													aria-label={$i18n.t('Stop')}
-													class="bg-white hover:bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-800 transition rounded-full p-[0.3125rem]"
+													class="kakam-composer-primary-action bg-white hover:bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-800 transition rounded-full p-[0.3125rem]"
 													on:click={() => {
 														stopResponse();
 													}}
@@ -2628,7 +2628,7 @@
 												<!-- {$i18n.t('Call')} -->
 												<Tooltip content={$i18n.t('Voice mode')}>
 													<button
-														class=" bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100 transition rounded-full p-[0.3125rem] self-center"
+														class="kakam-composer-primary-action bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100 transition rounded-full p-[0.3125rem] self-center"
 														type="button"
 														on:click={async () => {
 															if (selectedModels.length > 1) {
@@ -2695,7 +2695,7 @@
 												>
 													<button
 														id="send-message-button"
-														class="{!(prompt === '' && files.length === 0) || uploadPending
+														class="kakam-composer-primary-action {!(prompt === '' && files.length === 0) || uploadPending
 															? 'bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100 '
 															: 'text-white bg-gray-200 dark:text-gray-900 dark:bg-gray-700 disabled'} transition rounded-full p-[0.3125rem] self-center"
 														type="submit"

@@ -30,7 +30,13 @@
 	onMount(load);
 </script>
 
-<div class="w-full min-w-0 space-y-4 pb-4">
+<!-- SettingsModal clips its fixed-height content; this page owns vertical scrolling. -->
+<div
+	role="region"
+	aria-label="Memory 服务配置"
+	tabindex="0"
+	class="scrollbar-hover h-full min-h-0 w-full min-w-0 space-y-4 overflow-y-auto overscroll-contain pb-4 pr-1.5"
+>
 	<div class="flex items-center justify-between gap-3">
 		<h2 class="text-lg font-semibold">Memory 服务</h2>
 		<button type="button" class="text-xs underline" disabled={loading} on:click={load}

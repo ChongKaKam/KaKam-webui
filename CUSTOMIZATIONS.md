@@ -110,6 +110,15 @@ embedding configuration and Ollama Cloud web search are outside this UI slice.
 
 ## KaKam chat and settings refinement
 
+Mobile action stability and settings typography: `MessageInput.svelte` adds the
+`kakam-composer-primary-action` hook to voice/send/stop buttons. The scoped theme
+keeps their touch targets identical and icons centered across input states.
+`common/InterfaceSettings.svelte`, `chat/Settings/UserSettingRow.svelte`,
+`chat/Settings/UserSettingField.svelte`, `admin/Settings/AdminSettingRow.svelte`,
+and `admin/Settings/AdminSettingField.svelte` add semantic label/description
+hooks only; typography remains in `src/lib/kakam/shared/theme.css`. No settings
+values, defaults, permissions or event handlers are changed.
+
 Presentation and capability logic live in `src/lib/kakam/shared/theme.css`,
 `src/lib/kakam/chat/`, and `src/lib/kakam/settings/`. Memory activity continues
 using the existing project-owned panel and API. No new production dependencies.

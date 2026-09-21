@@ -125,9 +125,6 @@
 		{#if report.omitted_preferred?.length}<p class="my-2 text-xs text-amber-600">
 				{report.omitted_preferred.length} 条优先记忆因预算或有效性限制未注入。
 			</p>{/if}
-		{#if sessionId && !sessionId.startsWith('local:') && !sessionId.startsWith('temporary:')}
-			<SessionMemory {sessionId} {sourceMessageId} />
-		{/if}
 		{#if report.status === 'unavailable'}
 			<div
 				role="status"
@@ -176,6 +173,9 @@
 				</div>
 			</details>
 		{/each}
+		{#if sessionId && !sessionId.startsWith('local:') && !sessionId.startsWith('temporary:')}
+			<SessionMemory {sessionId} {sourceMessageId} />
+		{/if}
 	</div>
 </dialog>
 

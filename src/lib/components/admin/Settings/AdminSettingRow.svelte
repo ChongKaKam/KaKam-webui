@@ -10,7 +10,10 @@
 </script>
 
 <div class="flex items-center justify-between gap-4 {className}">
-	<div id={labelId} class="min-w-0 text-xs text-gray-600 dark:text-gray-400 {labelClassName}">
+	<div
+		id={labelId}
+		class="kakam-setting-label min-w-0 text-xs text-gray-600 dark:text-gray-400 {labelClassName}"
+	>
 		<slot name="label">{label}</slot>
 	</div>
 
@@ -20,7 +23,7 @@
 </div>
 
 {#if description}
-	<p class="-mt-1 text-[0.6875rem] text-gray-400 dark:text-gray-600">
+	<p class="kakam-setting-description -mt-1 text-[0.6875rem] text-gray-400 dark:text-gray-600">
 		{description}
 	</p>
 {/if}
