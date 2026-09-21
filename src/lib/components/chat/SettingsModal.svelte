@@ -1227,7 +1227,7 @@
 
 	<div class="kakam-settings-content flex-1 min-w-0 min-h-0 p-4 md:px-5 flex flex-col">
 		<div class="kakam-settings-breadcrumb">{$i18n.t(isAdminTab(selectedTab) ? 'Admin' : 'Personal')} / {$i18n.t(settingGroupTitle(selectedTab))}</div>
-		<div class="flex-1 min-h-0 overflow-hidden">
+		<div class="kakam-settings-panel flex-1 min-h-0 overflow-y-auto">
 			{#if selectedTab === 'general'}
 				<General
 					{getModels}

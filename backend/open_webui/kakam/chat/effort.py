@@ -14,7 +14,7 @@ def apply_effort_override(payload: dict) -> None:
             payload['reasoning'] = reasoning
         else:
             payload.pop('reasoning')
-    if isinstance(value, str) and value in {'none', 'low', 'medium', 'high', 'xhigh'}:
+    if isinstance(value, str) and value in {'none', 'low', 'medium', 'high', 'xhigh', 'max'}:
         payload['reasoning_effort'] = value
 
 

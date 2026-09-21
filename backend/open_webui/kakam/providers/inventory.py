@@ -1,5 +1,6 @@
 """Pure adapter for an explicit supplier allowlist in native connection configuration."""
 from copy import deepcopy
+from .reasoning import public_reasoning, reasoning_capability
 
 
 def validate_suppliers(configs: dict) -> None:
@@ -29,6 +30,8 @@ def validate_suppliers(configs: dict) -> None:
             if not isinstance(model, dict) or not isinstance(model.get('id'), str) or not model['id'].strip() or len(model['id']) > 512:
                 raise ValueError('模型 ID 无效。')
             ids.append(model['id'])
+            if 'reasoning' in model:
+                reasoning_capability(model['reasoning'])
         if len(ids) != len(set(ids)) or config.get('model_ids') != ids:
             raise ValueError('模型白名单与探测快照不一致。')
     # Explicit inventories must never silently shadow another supplier.
@@ -49,7 +52,8 @@ def supplier_inventory(config: dict, index: int) -> dict | None:
     return {'object': 'list', 'data': [
         {'id': model['id'], 'name': model.get('name') or model['id'], 'owned_by': 'openai',
          'openai': {'id': model['id']}, 'urlIdx': index,
-         'kakam_provider': {'id': supplier['id'], 'alias': supplier['alias'], 'model_id': model['id']}}
+         'kakam_provider': {'id': supplier['id'], 'alias': supplier['alias'], 'model_id': model['id'],
+                            **public_reasoning(model)}}
         for model in supplier.get('models', []) if model['id'] in allowed
     ]}
 

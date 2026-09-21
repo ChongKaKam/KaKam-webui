@@ -263,3 +263,19 @@ or a model from its allowlist does not erase its history or saved access setting
 Validation covers duplicate provider model IDs, prefix dispatch, empty pools,
 snapshot consistency, safe metadata, and the native per-model access filter.
 UI probes use a local mock server; no production supplier configuration is changed.
+
+## Bounded settings layout and cloud image verification
+
+| Upstream file | Reason / delegated behavior |
+| --- | --- |
+| `src/lib/components/chat/SettingsModal.svelte` | Add a scoped scrollable content panel. `src/lib/kakam/shared/theme.css` overrides the inherited modal minimum height, constrains the viewport, and keeps sidebar/content scrolling independent with form footers visible. Native settings forms retain their own content scroll areas. |
+| `src/lib/components/admin/Settings/Images.svelte` | Mount `src/lib/kakam/images/components/ImageConnectionTest.svelte` for generation and editing configurations, binding discovered-model selection to the existing model fields. No configuration persistence or native local-engine behavior changes. |
+| `backend/open_webui/main.py` | Register the admin-only `/api/custom/images/probe` BFF from `backend/open_webui/kakam/images/`. |
+
+Cloud verification uses the current unsaved OpenAI-compatible or Gemini configuration.
+Reading real provider model lists verifies connectivity and model visibility;
+it does not prove image-generation capability. Only the explicit, labeled generation
+button makes a potentially billable request for one test image. The BFF checks for
+image data/URLs, does not download returned URLs or save images/chats/configuration,
+and sanitizes provider errors. No new production dependencies. See
+`src/lib/kakam/images/README.md` for the API, limits, and validation boundaries.

@@ -25,12 +25,15 @@ describe('admin provider probe', () => {
 				{ url: 'https://example.test/v1/', key: 'edited-key', config: { api_type: 'responses' } },
 				signal
 			)
-		).toEqual([{ id: 'a', name: 'a' }]);
+		).toEqual([
+			{ id: 'a', name: 'a', reasoning: { status: 'unknown', source: 'unknown', values: [] } }
+		]);
 		const [url, options] = fetcher.mock.calls[0];
 		expect(url).toBe('/openai/verify');
 		expect(options.signal).toBe(signal);
 		expect(options.headers.Authorization).toBe('Bearer session');
 		expect(JSON.parse(options.body).key).toBe('edited-key');
+		expect(fetcher).toHaveBeenCalledTimes(1);
 	});
 	it('rejects authorization failures without exposing remote error contents', async () => {
 		vi.stubGlobal(

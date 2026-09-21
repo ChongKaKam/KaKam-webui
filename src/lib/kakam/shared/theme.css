@@ -124,7 +124,18 @@ body {
 .kakam-code-content > .kakam-code-spacer {
 	display: none;
 }
+.kakam-settings-shell {
+	overflow: hidden;
+	height: 100dvh;
+}
+.kakam-settings {
+	/* Modal's upstream min-h-fit otherwise defeats its viewport height cap. */
+	min-height: 0 !important;
+	flex-shrink: 0;
+}
 .kakam-settings #settings-tabs-container {
+	min-height: 0;
+	overflow: hidden;
 	background: var(--kakam-surface);
 	padding: 0.75rem 0.5rem;
 	border-color: var(--kakam-border);
@@ -152,6 +163,21 @@ body {
 }
 .kakam-settings .kakam-settings-content {
 	padding: 1.75rem 2rem;
+	overflow: hidden;
+}
+.kakam-settings #settings-tabs-container > .tabs,
+.kakam-settings .kakam-settings-panel {
+	overscroll-behavior-y: contain;
+	scrollbar-gutter: stable;
+}
+.kakam-settings .kakam-settings-panel > form {
+	min-height: 0;
+}
+.kakam-settings .kakam-settings-panel > form > :last-child {
+	flex-shrink: 0;
+}
+.kakam-settings .kakam-settings-breadcrumb {
+	flex-shrink: 0;
 }
 .kakam-settings-content h2 {
 	font-size: 1.25rem;

@@ -31,3 +31,42 @@ the admin can set a distinct prefix explicitly after reviewing the displayed war
 Tests: frontend service/API tests and `backend/open_webui/kakam/providers/test_inventory.py`.
 The latter isolates the pure adapter and executes the native inventory/ACL functions
 with stubbed external dependencies, without starting the application or a database.
+
+## Automatic thinking-effort discovery
+
+Every successful model probe now attaches a bounded `reasoning` capability to each
+selected snapshot and exposes it inside `kakam_provider`. Re-probe and save an
+existing connection to populate/refresh this information. No automatic production
+migration and no extra inference requests are made. The editor distinguishes
+supported, explicitly unsupported, and unknown results with their evidence source.
+
+`reasoning.ts` reads explicit model-list `reasoning_effort` declarations at the
+top level, in `capabilities`, or in `info.meta` (including its `capabilities`).
+Declarations may be an array of wire levels, `false`, or an object containing
+`values` / `supported: false`. A boolean `true`, generic reasoning support, or
+`supported_parameters: ["reasoning_effort"]` without concrete levels cannot prove
+which values work, so the result stays unknown. Unrecognized levels also stay
+unknown. Missing capability fields never establish lack of support.
+
+With no explicit declaration, a small catalog matches both an official HTTPS
+endpoint and exact IDs. It covers the existing GPT rules and DeepSeek's documented
+`deepseek-flash`, `deepseek-v4-flash`, `deepseek-v4-flash-vision-exp`, and
+`deepseek-v4-pro` compatibility IDs. The DeepSeek rule was verified on 2026-09-21:
+https://api-docs.deepseek.com/guides/thinking_mode/
+Aliases such as `dpsk-4.1-flash` at resellers remain unknown unless metadata supplies
+levels; provider names alone are not trusted capability evidence. These results
+describe advertised support, not a measured change in inference behavior.
+
+Native administrator model metadata (`info.meta.reasoning_effort`, then
+`info.meta.capabilities.reasoning_effort`) remains the highest-priority override.
+Without an override, a detected unknown/unsupported result prevents name-based
+fallback. Legacy snapshots without capability results retain previous behavior.
+The same ID at different suppliers retains independent capability results.
+
+UI `extra high` maps to advertised `max` when available, otherwise `xhigh`;
+DeepSeek therefore uses `max`, and absent `medium` stays disabled. A supported
+model defaults to `high` when offered. Unknown models still display `none` but
+omit the parameter, which is not a request to turn off the provider's own default
+thinking. The BFF validates the snapshot, exposes only the capability contract,
+and retains it through native preset inheritance. Malformed saved capability
+data falls back to unknown without breaking the model list or login.

@@ -1,9 +1,11 @@
+import type { ReasoningCapability } from '../providers/reasoning';
+
 export const effortLevels = ['none', 'low', 'medium', 'high', 'extra high'] as const;
 export type Effort = (typeof effortLevels)[number];
 
 export type EffortModel = {
 	id: string;
-	kakam_provider?: { id: string; alias: string; model_id: string };
+	kakam_provider?: { id: string; alias: string; model_id: string; reasoning?: ReasoningCapability };
 	owned_by?: string;
 	direct?: boolean;
 	info?: {
@@ -18,7 +20,7 @@ export type EffortModel = {
 export type ChatParams = Record<string, unknown> & { kakam_effort?: Record<string, Effort> };
 
 export function normalizeEffort(value: unknown): Effort | undefined {
-	if (value === 'xhigh') return 'extra high';
+	if (value === 'xhigh' || value === 'max') return 'extra high';
 	return effortLevels.includes(value as Effort) ? (value as Effort) : undefined;
 }
 
@@ -34,6 +36,14 @@ export function supportedEfforts(model?: EffortModel): Effort[] {
 		);
 	}
 	if (declared === true) return ['low', 'medium', 'high'];
+	const detected = model.kakam_provider?.reasoning;
+	if (detected) {
+		return detected.status === 'supported'
+			? effortLevels.filter((level) =>
+					detected.values.some((value) => normalizeEffort(value) === level)
+				)
+			: [];
+	}
 	const id = (
 		model.kakam_provider?.model_id ||
 		model.info?.base_model_id ||
@@ -76,7 +86,11 @@ export function effortRequest(model: EffortModel, params: ChatParams) {
 		outgoing.custom_params = custom;
 	}
 	const effort = supportedEfforts(model).length ? selectedEffort(model, params) : null;
-	const apiValue = effort === 'extra high' ? 'xhigh' : effort;
+	const declared =
+		model.info?.meta?.reasoning_effort ?? model.info?.meta?.capabilities?.reasoning_effort;
+	const wireValues = Array.isArray(declared) ? declared : model.kakam_provider?.reasoning?.values;
+	const apiValue =
+		effort === 'extra high' ? (wireValues?.includes('max') ? 'max' : 'xhigh') : effort;
 	if (apiValue !== null) outgoing.reasoning_effort = apiValue;
 	return {
 		params: outgoing,

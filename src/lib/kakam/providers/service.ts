@@ -1,13 +1,20 @@
 import type { Connection, DiscoveredModel, ProviderConfig, ProviderModel } from './types';
+import { detectReasoning } from './reasoning';
 
-export function discoveredModels(data: unknown): DiscoveredModel[] {
+export function discoveredModels(data: unknown, baseUrl?: string): DiscoveredModel[] {
 	const rows = Array.isArray(data) ? data : (data as { data?: unknown })?.data;
 	if (!Array.isArray(rows)) throw new Error('models 接口没有返回有效的模型列表。');
 	const models = new Map<string, DiscoveredModel>();
 	for (const item of rows) {
 		const id = typeof item === 'string' ? item : item?.id;
 		if (typeof id !== 'string' || !id.trim() || id.length > 512) continue;
-		models.set(id, { id, name: typeof item?.name === 'string' ? item.name : id });
+		models.set(id, {
+			id,
+			name: typeof item?.name === 'string' ? item.name : id,
+			...(baseUrl !== undefined
+				? { reasoning: detectReasoning(typeof item === 'string' ? { id } : item, baseUrl) }
+				: {})
+		});
 	}
 	if (rows.length && !models.size) throw new Error('models 接口没有返回有效的模型 ID。');
 	return [...models.values()].sort((a, b) => a.id.localeCompare(b.id));

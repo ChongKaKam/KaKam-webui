@@ -30,6 +30,29 @@ def upstream_function(path, name, namespace):
 
 
 class SupplierInventoryTest(unittest.TestCase):
+    def test_capability_persists_with_presets_and_discards_unrelated_fields(self):
+        config = connection()
+        config['kakam_supplier']['models'][0]['reasoning'] = {
+            'status': 'supported', 'source': 'metadata', 'values': ['none', 'low', 'high', 'max'],
+            'headers': {'Authorization': 'secret'}}
+        validate_suppliers({'0': config})
+        model = supplier_inventory(config, 0)['data'][0]
+        capability = model['kakam_provider']['reasoning']
+        self.assertEqual(capability['values'][-1], 'max')
+        self.assertNotIn('secret', str(model))
+        self.assertEqual(inherit_supplier(model)['kakam_provider']['reasoning'], capability)
+
+    def test_invalid_capability_rejected_on_save_but_safe_on_read(self):
+        for invalid in [None, [], {'status': 'supported', 'source': 'unknown', 'values': ['high']},
+                        {'status': 'supported', 'source': 'metadata', 'values': ['ultra']},
+                        {'status': 'unknown', 'source': 'metadata', 'values': ['high']},
+                        {'status': 'supported', 'source': 'metadata', 'values': [{}]}]:
+            with self.subTest(invalid=invalid):
+                config = connection()
+                config['kakam_supplier']['models'][0]['reasoning'] = invalid
+                with self.assertRaises(ValueError): validate_suppliers({'0': config})
+                self.assertEqual(supplier_inventory(config, 0)['data'][0]['kakam_provider']['reasoning']['status'], 'unknown')
+
     def test_empty_whitelist_does_not_autodiscover(self):
         self.assertEqual(supplier_inventory(connection(ids=[]), 0)['data'], [])
         self.assertIsNone(supplier_inventory({'model_ids': []}, 0))

@@ -231,7 +231,10 @@
 									? '此模型不附加思考强度参数'
 									: enabled
 										? effortDescriptions[level]
-										: '此模型不支持'}</span
+										: !allowed.length &&
+											  active.model.kakam_provider?.reasoning?.status !== 'unsupported'
+											? '尚未确认此档位'
+											: '此模型不支持此档位'}</span
 							></span
 						>
 					</button>

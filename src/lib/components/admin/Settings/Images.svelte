@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ImageConnectionTest from '$lib/kakam/images/components/ImageConnectionTest.svelte';
 	import { toast } from 'svelte-sonner';
 
 	import { createEventDispatcher, onMount, getContext } from 'svelte';
@@ -710,6 +711,8 @@
 					{/if}
 				</AdminSettingSection>
 
+				<ImageConnectionTest {config} bind:selectedModel={config.IMAGE_GENERATION_MODEL} />
+
 				<AdminSettingSection title={$i18n.t('Edit Image')}>
 					<AdminSettingRow
 						label={$i18n.t('Image Edit')}
@@ -980,6 +983,7 @@
 						</div>
 					{/if}
 				</AdminSettingSection>
+				<ImageConnectionTest {config} target="edit" bind:selectedModel={config.IMAGE_EDIT_MODEL} />
 			</div>
 		{/if}
 	</div>

@@ -26,5 +26,5 @@ export async function probeProvider(token: string, connection: Connection, signa
 				? '探测未通过：请检查 API Key、模型读取权限和管理员登录状态。'
 				: `探测失败（HTTP ${response.status}），请检查 Base URL 和服务状态。`
 		);
-	return discoveredModels(await response.json());
+	return discoveredModels(await response.json(), connection.url);
 }

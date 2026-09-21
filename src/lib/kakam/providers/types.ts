@@ -1,4 +1,5 @@
-export type DiscoveredModel = { id: string; name: string };
+import type { ReasoningCapability } from './reasoning';
+export type DiscoveredModel = { id: string; name: string; reasoning?: ReasoningCapability };
 export type Supplier = { id: string; alias: string; models: DiscoveredModel[] };
 export type ConnectionConfig = Record<string, unknown> & {
 	enable?: boolean;

@@ -3,6 +3,7 @@
 	import Modal from '$lib/components/common/Modal.svelte';
 	import { probeProvider } from '../api';
 	import { connectionFingerprint, poolConnection } from '../service';
+	import { reasoningSummary } from '../reasoning';
 	import type { Connection } from '../types';
 	export let connection: Connection;
 	export let onSave: (connection: Connection) => Promise<void>;
@@ -209,6 +210,9 @@
 			<p class="note">
 				先验证 Base URL 和 API Key，再选择入池模型。未勾选的模型不会载入；留空表示不载入任何模型。
 			</p>
+			<p class="note">
+				同时自动识别思考强度，不发送付费聊天请求。结果来自供应商能力声明或已核实的官方接口规则；未确认不等于不支持。重新探测可刷新能力信息。
+			</p>
 			{#if status}<p role="status">{status}</p>{/if}
 			{#if !valid}<p class="note">当前连接尚未验证，请先探测。</p>{/if}
 			{#if discovered.length}
@@ -236,7 +240,9 @@
 					<fieldset disabled={!valid || probing || saving}>
 						{#each visible as model (model.id)}<label class="check model"
 								><input type="checkbox" bind:group={selected} value={model.id} /><span
-									>{model.name}{#if model.name !== model.id}<small>{model.id}</small>{/if}</span
+									>{model.name}{#if model.name !== model.id}<small>{model.id}</small>{/if}<small
+										>{reasoningSummary(model.reasoning)}</small
+									></span
 								></label
 							>{/each}
 					</fieldset>

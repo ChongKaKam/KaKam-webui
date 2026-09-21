@@ -18,14 +18,14 @@ class EffortOverrideTest(unittest.TestCase):
         self.assertEqual(payload, {'reasoning': {'summary': 'auto'}, 'temperature': 0.7})
 
     def test_valid_choice_overrides_model_default_and_removes_marker(self):
-        for value in ['none', 'low', 'medium', 'high', 'xhigh']:
+        for value in ['none', 'low', 'medium', 'high', 'xhigh', 'max']:
             with self.subTest(value=value):
                 payload = {'_kakam_reasoning_effort': value, 'reasoning_effort': 'medium'}
                 apply_effort_override(payload)
                 self.assertEqual(payload, {'reasoning_effort': value})
 
     def test_invalid_values_never_reach_provider(self):
-        for value in ['extra high', 'max', {}, [], 1]:
+        for value in ['extra high', 'ultra', {}, [], 1]:
             with self.subTest(value=value):
                 payload = {'_kakam_reasoning_effort': value, 'reasoning': {'effort': 'high'}}
                 apply_effort_override(payload)
@@ -43,6 +43,13 @@ class EffortOverrideTest(unittest.TestCase):
         apply_effort_override(payload)
         convert_effort_to_responses(payload)
         self.assertEqual(payload, {})
+
+    def test_deepseek_max_survives_both_protocols(self):
+        payload = {'_kakam_reasoning_effort': 'max', 'reasoning_effort': 'high'}
+        apply_effort_override(payload)
+        self.assertEqual(payload, {'reasoning_effort': 'max'})
+        convert_effort_to_responses(payload)
+        self.assertEqual(payload, {'reasoning': {'effort': 'max'}})
 
     def test_upstream_responses_conversion_integrates_effort(self):
         # Exercise the real upstream converter without importing the full server
