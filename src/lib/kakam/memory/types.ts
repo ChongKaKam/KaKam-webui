@@ -12,7 +12,7 @@ export type Memory = {
 	id: string;
 	content: string;
 	kind: string;
-	expires_at: string;
+	expires_at: string | null;
 	version?: number;
 	tags?: string[];
 };

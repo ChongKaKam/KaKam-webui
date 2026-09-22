@@ -134,13 +134,19 @@ using the existing project-owned panel and API. No new production dependencies.
 | `backend/open_webui/routers/openai.py` | Apply the private UI Effort override after saved model defaults, and map Chat Completions effort to Responses format through `kakam/chat/effort.py`. |
 | `backend/open_webui/utils/chat.py` | Consume the private UI override before direct-connection or function dispatch so custom fields never reach those consumers. |
 
-The composer is authoritative for Effort on UI chat requests. Unknown models
-show `none` and omit the provider parameter, even when old global/model defaults
-set it. Supported models default to `high`; only explicitly supported levels
-are selectable. `extra high` serializes as `xhigh`. Per-model selections persist
-with existing chat params. Metadata can override conservative built-in detection;
-see `src/lib/kakam/chat/README.md`. Requests without the private override retain
-upstream default handling. Responses requests use `reasoning.effort`.
+The composer is authoritative for Effort on UI chat requests. All models offer
+all five levels and default to `high` unless a per-model choice is saved. Probe
+results are advisory, never a selection gate. `none` omits the provider effort
+parameter and clears stale global/model effort defaults. `extra high` uses `max`
+when explicitly advertised, otherwise `xhigh`. Requests without a private override
+retain upstream defaults; Responses requests use `reasoning.effort`. See
+`src/lib/kakam/chat/README.md`.
+
+`src/lib/components/chat/Messages/ResponseMessage.svelte` mounts the project-owned
+`chat/components/EffortErrorHint.svelte` beside the existing error display. This
+covers HTTP and streaming/background message errors without replacing their original
+content. The hint suggests a manual retry with `none` if the selected effort is
+rejected; it does not change the selection or automatically retry.
 
 The stylesheet keeps the user's UI scale/font preference, adds readable chat/code
 spacing, larger settings targets, mobile wrapping, and safe-area padding. Safe-area
@@ -279,3 +285,20 @@ button makes a potentially billable request for one test image. The BFF checks f
 image data/URLs, does not download returned URLs or save images/chats/configuration,
 and sanitizes provider errors. No new production dependencies. See
 `src/lib/kakam/images/README.md` for the API, limits, and validation boundaries.
+
+## User-confirmed Remember it action
+
+`src/lib/components/chat/Messages/ResponseMessage.svelte` adds one custom
+`memory/components/RememberMessageButton.svelte` mount beside Copy, passing the
+current answer and branch history. The same upstream file gates rating and
+Read Aloud controls through `src/lib/kakam/shared/cloud-ui.ts`; their backend
+capabilities and other audio features remain intact.
+
+The custom preview includes only the selected user/assistant turn. Confirmation
+uses the existing manual Memory API with optional opaque source IDs. The BFF
+checks Memory write permission, saved-chat ownership and completed-answer linkage;
+the independent service owns sensitivity validation, embeddings, deduplication,
+retention and provenance persistence. No native Memory tables are used. The
+independent service migration `004_durable_memory.sql` separates indefinite
+retention from recent-preferred recall; see `services/memory/RETENTION.md` and
+`src/lib/kakam/memory/REMEMBER.md`. The existing Memory README is unchanged.

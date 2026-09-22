@@ -52,7 +52,10 @@ class Repository:
     def list(self, owner):
         with self.connect() as db:
             return db.execute(
-                "SELECT id,kind,content,pinned,version,tags,created_at,expires_at FROM memory_item WHERE owner=%s AND status='active' AND expires_at>now() ORDER BY updated_at DESC LIMIT 200",
+                """SELECT id,kind,content,pinned,version,tags,created_at,expires_at FROM memory_item
+                WHERE owner=%s AND status='active'
+                AND (expires_at IS NULL OR expires_at>now())
+                ORDER BY updated_at DESC LIMIT 200""",
                 (owner,),
             ).fetchall()
 
@@ -61,23 +64,19 @@ class Repository:
             # Scope BEFORE exact distance sorting. No approximate global index.
             return db.execute(
                 """WITH scoped AS MATERIALIZED (
-                SELECT * FROM memory_item WHERE owner=%s AND status='active'
-                AND updated_at >= now() - make_interval(days => %s)
-                AND expires_at>now() AND embedding_version=%s AND NOT(id=ANY(%s::uuid[])))
-                SELECT id,kind,content,pinned,expires_at,updated_at,
-                1-(embedding <=> %s::vector) AS similarity FROM scoped
-                WHERE (pinned OR kind IN ('profile','preference','instruction') OR 1-(embedding <=> %s::vector) >= 0.3)
+                SELECT *, updated_at >= now() - make_interval(days => %s) AS recent
+                FROM memory_item WHERE owner=%s AND status='active'
+                AND (expires_at IS NULL OR expires_at>now())
+                AND embedding_version=%s AND NOT(id=ANY(%s::uuid[]))),
+                scored AS (
+                SELECT id,kind,content,pinned,expires_at,updated_at,recent,
+                1-(embedding <=> %s::vector) AS similarity FROM scoped)
+                SELECT * FROM scored
+                WHERE pinned OR kind IN ('profile','preference','instruction')
+                OR similarity >= CASE WHEN recent THEN 0.3 ELSE 0.7 END
                 ORDER BY pinned DESC, (kind IN ('profile','preference','instruction')) DESC,
-                embedding <=> %s::vector, id LIMIT 30""",
-                (
-                    owner,
-                    days,
-                    version,
-                    list(excluded),
-                    vector_literal(vector),
-                    vector_literal(vector),
-                    vector_literal(vector),
-                ),
+                (similarity + CASE WHEN recent THEN 0.1 ELSE 0 END) DESC, id LIMIT 30""",
+                (days, owner, version, list(excluded), vector_literal(vector)),
             ).fetchall()
 
     def add(self, owner, content, kind, vector, version, source=None):
@@ -150,7 +149,8 @@ class Repository:
             db.execute(
                 "UPDATE memory_job SET status='failed',evidence='' WHERE status='processing' AND attempts>=5 AND available_at<=now()"
             )
-            db.execute('DELETE FROM memory_item WHERE expires_at < now()')
+            # Only explicit expiry is eligible; NULL means indefinitely retained.
+            db.execute('DELETE FROM memory_item WHERE expires_at IS NOT NULL AND expires_at < now()')
             db.execute("DELETE FROM memory_job WHERE created_at<now()-interval '30 days'")
             db.execute("DELETE FROM memory_event WHERE created_at<now()-interval '30 days'")
             db.execute('DELETE FROM memory_proposal WHERE expires_at<now()')
@@ -160,6 +160,8 @@ class Repository:
     def get(self, owner, memory_id):
         with self.connect() as db:
             return db.execute(
-                "SELECT id,content,kind,pinned,tags,version,expires_at,updated_at FROM memory_item WHERE owner=%s AND id=%s AND status='active' AND expires_at>now()",
+                """SELECT id,content,kind,pinned,tags,version,expires_at,updated_at FROM memory_item
+                WHERE owner=%s AND id=%s AND status='active'
+                AND (expires_at IS NULL OR expires_at>now())""",
                 (owner, memory_id),
             ).fetchone()

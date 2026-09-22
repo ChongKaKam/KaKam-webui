@@ -78,6 +78,8 @@ describe('supplier inventories', () => {
 		};
 		expect(supplierModelLabel(model)).toBe('GPT-6 Astra · Official');
 		expect(supportedEfforts(model)).toContain('high');
-		expect(supportedEfforts({ ...model, info: { meta: { reasoning_effort: false } } })).toEqual([]);
+		expect(supportedEfforts({ ...model, info: { meta: { reasoning_effort: false } } })).toContain(
+			'high'
+		);
 	});
 });

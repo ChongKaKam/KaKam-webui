@@ -26,7 +26,7 @@ class Scope(BaseModel):
 class Prepare(BaseModel):
     session_id: str = Field(min_length=1, max_length=256)
     query: str = Field(max_length=8000)
-    days: int = Field(default=30, ge=7, le=30)
+    days: int = Field(default=30, ge=7, le=30, description='Recent-memory ranking window, not retention')
     cache: bool = True
     explicit_recall: bool = False
 

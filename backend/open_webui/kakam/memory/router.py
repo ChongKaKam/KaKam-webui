@@ -11,6 +11,7 @@ from . import client
 from .activity import MemoryActivity, get_activity
 from .auth import require_permission
 from .details import ContextDetails, lookup
+from .remember import MemorySource, verify_source
 
 router = APIRouter()
 
@@ -18,6 +19,7 @@ router = APIRouter()
 class NewMemory(BaseModel):
     content: str = Field(min_length=1, max_length=2000)
     kind: Literal['profile', 'preference', 'instruction', 'fact', 'episode'] = 'fact'
+    source: MemorySource | None = None
 
 
 async def proxy(method, path, user, body=None):
@@ -63,7 +65,13 @@ async def add(body: NewMemory, user=Depends(get_verified_user)):
     from .manager import writable
 
     writable()
-    return await proxy('POST', '/v1/memories', user, body.model_dump())
+    await require_permission(user)
+    if body.source:
+        await verify_source(body.source, user)
+    payload = body.model_dump(exclude_none=True)
+    if body.source:
+        payload['kind'] = 'episode'
+    return await proxy('POST', '/v1/memories', user, payload)
 
 
 @router.get('/activity', response_model=MemoryActivity)

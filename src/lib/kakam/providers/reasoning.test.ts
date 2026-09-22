@@ -68,21 +68,23 @@ describe('automatic reasoning capability discovery', () => {
 			kakam_provider: { id: 'supplier', alias: 'Official', model_id: 'deepseek-flash', reasoning }
 		};
 		expect(JSON.stringify(rows)).not.toContain('secret');
-		expect(supportedEfforts(model)).toEqual(['none', 'low', 'high', 'extra high']);
+		expect(supportedEfforts(model)).toEqual(['none', 'low', 'medium', 'high', 'extra high']);
 		expect(selectedEffort(model)).toBe('high');
 		expect(
 			effortRequest(model, selectEffort({}, model, 'extra high'))._kakam_reasoning_effort
 		).toBe('max');
 		expect(effortRequest(model, selectEffort({}, model, 'none'))._kakam_reasoning_effort).toBe(
-			'none'
+			null
 		);
 		const overridden = { ...model, info: { meta: { reasoning_effort: ['high', 'xhigh'] } } };
 		expect(
 			effortRequest(overridden, selectEffort({}, overridden, 'extra high'))._kakam_reasoning_effort
 		).toBe('xhigh');
-		expect(supportedEfforts({ ...model, info: { meta: { reasoning_effort: false } } })).toEqual([]);
+		expect(supportedEfforts({ ...model, info: { meta: { reasoning_effort: false } } })).toContain(
+			'high'
+		);
 	});
-	it('keeps suppliers independent and never treats unknown as a disable-thinking request', () => {
+	it('keeps discovery advisory and allows high for unknown suppliers', () => {
 		const model = {
 			id: 'supplier.gpt-6-astra',
 			owned_by: 'openai',
@@ -93,8 +95,8 @@ describe('automatic reasoning capability discovery', () => {
 				reasoning: detectReasoning({ id: 'gpt-6-astra' }, 'https://partner.test')
 			}
 		};
-		expect(supportedEfforts(model)).toEqual([]);
-		expect(effortRequest(model, {})._kakam_reasoning_effort).toBeNull();
+		expect(supportedEfforts(model)).toContain('high');
+		expect(effortRequest(model, {})._kakam_reasoning_effort).toBe('high');
 		expect(reasoningSummary(model.kakam_provider.reasoning)).toContain('未确认');
 		expect(reasoningSummary(detectReasoning({ reasoning_effort: false }))).toContain('不支持');
 	});

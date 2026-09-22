@@ -21,7 +21,9 @@ class ManagerRepository:
             ).fetchone()
             if row['selections']:
                 active = db.execute(
-                    "SELECT id FROM memory_item WHERE owner=%s AND id=ANY(%s::uuid[]) AND status='active' AND expires_at>now()",
+                    """SELECT id FROM memory_item
+                    WHERE owner=%s AND id=ANY(%s::uuid[]) AND status='active'
+                    AND (expires_at IS NULL OR expires_at>now())""",
                     (owner, list(row['selections'])),
                 ).fetchall()
                 ids = {str(item['id']) for item in active}
@@ -33,7 +35,9 @@ class ManagerRepository:
         with self.repo.connect() as db:
             for memory_id in selections:
                 if not db.execute(
-                    "SELECT id FROM memory_item WHERE owner=%s AND id=%s AND status='active' AND expires_at>now()",
+                    """SELECT id FROM memory_item
+                    WHERE owner=%s AND id=%s AND status='active'
+                    AND (expires_at IS NULL OR expires_at>now())""",
                     (owner, memory_id),
                 ).fetchone():
                     raise LookupError('Memory not found')
@@ -51,7 +55,7 @@ class ManagerRepository:
                 (Jsonb(checkpoint), owner, session_id),
             )
 
-    def operation(self, owner, session_id, operation, snapshot, state, facts, policy_version='default:2'):
+    def operation(self, owner, session_id, operation, snapshot, state, facts, policy_version='default:3'):
         operation_id = uuid.uuid4()
         with self.repo.connect() as db:
             db.execute(
@@ -144,7 +148,9 @@ class ManagerRepository:
 
         with self.repo.connect() as db:
             row = db.execute(
-                "SELECT * FROM memory_item WHERE owner=%s AND id=%s AND status='active' AND expires_at>now() FOR UPDATE",
+                """SELECT * FROM memory_item
+                WHERE owner=%s AND id=%s AND status='active'
+                AND (expires_at IS NULL OR expires_at>now()) FOR UPDATE""",
                 (owner, memory_id),
             ).fetchone()
             if not row:
@@ -221,6 +227,9 @@ class ManagerRepository:
     def relations(self, owner):
         with self.repo.connect() as db:
             return db.execute(
-                "SELECT r.memory_id,r.collection_id FROM memory_membership r JOIN memory_item m ON m.id=r.memory_id JOIN memory_collection c ON c.id=r.collection_id WHERE m.owner=%s AND c.owner=%s AND m.status='active' AND m.expires_at>now() LIMIT 500",
+                """SELECT r.memory_id,r.collection_id FROM memory_membership r
+                JOIN memory_item m ON m.id=r.memory_id JOIN memory_collection c ON c.id=r.collection_id
+                WHERE m.owner=%s AND c.owner=%s AND m.status='active'
+                AND (m.expires_at IS NULL OR m.expires_at>now()) LIMIT 500""",
                 (owner, owner),
             ).fetchall()

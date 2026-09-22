@@ -1,4 +1,7 @@
 <script lang="ts">
+	import RememberMessageButton from '$lib/kakam/memory/components/RememberMessageButton.svelte';
+	import { cloudUi } from '$lib/kakam/shared/cloud-ui';
+	import EffortErrorHint from '$lib/kakam/chat/components/EffortErrorHint.svelte';
 	import { toast } from 'svelte-sonner';
 
 	import { createEventDispatcher, onDestroy } from 'svelte';
@@ -892,6 +895,7 @@
 
 							{#if message?.error}
 								<Error content={message?.error?.content ?? message.content} />
+								<EffortErrorHint />
 							{/if}
 
 							{#if (message?.sources || message?.citations) && (model?.info?.meta?.capabilities?.citations ?? true)}
@@ -1090,6 +1094,9 @@
 									</button>
 								</Tooltip>
 
+								<RememberMessageButton {chatId} {messageId} {history} answer={visibleResponseContent}
+									{readOnly} failed={!!message.error} visible={isLastMessage || ($settings?.highContrastMode ?? false)} />
+
 								{#if onInsertToNote && visibleResponseContent}
 									<Tooltip content={$i18n.t('Insert into note')} placement="bottom">
 										<button
@@ -1106,7 +1113,7 @@
 									</Tooltip>
 								{/if}
 
-								{#if !readOnly && ($user?.role === 'admin' || ($user?.permissions?.chat?.tts ?? true))}
+								{#if cloudUi.responseReadAloud && !readOnly && ($user?.role === 'admin' || ($user?.permissions?.chat?.tts ?? true))}
 									<Tooltip content={$i18n.t('Read Aloud')} placement="bottom">
 										<button
 											aria-label={$i18n.t('Read Aloud')}
@@ -1239,7 +1246,7 @@
 								{/if}
 
 								{#if !readOnly}
-									{#if !$temporaryChatEnabled && ($config?.features.enable_message_rating ?? true) && ($user?.role === 'admin' || ($user?.permissions?.chat?.rate_response ?? true))}
+									{#if cloudUi.responseRatings && !$temporaryChatEnabled && ($config?.features.enable_message_rating ?? true) && ($user?.role === 'admin' || ($user?.permissions?.chat?.rate_response ?? true))}
 										<Tooltip content={$i18n.t('Good Response')} placement="bottom">
 											<button
 												aria-label={$i18n.t('Good Response')}

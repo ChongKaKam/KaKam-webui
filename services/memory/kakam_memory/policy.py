@@ -24,7 +24,7 @@ class PolicyTools(Protocol):
 
 
 class DefaultPolicy:
-    manifest = {**POLICIES[0], 'version': '2', 'capabilities': ['recall', 'scope', 'compact', 'propose']}
+    manifest = {**POLICIES[0], 'capabilities': ['recall', 'scope', 'compact', 'propose']}
 
     async def run(self, task: PolicyTask, tools: PolicyTools):
         if task.operation == 'compact_context':

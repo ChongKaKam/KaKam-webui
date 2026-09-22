@@ -64,3 +64,21 @@ def test_job_idempotency_lease_retry_and_evidence_erasure(repo):
     repo.finish(retry, True)
     with repo.connect() as db:
         assert db.execute('SELECT evidence FROM memory_job').fetchone()['evidence'] == ''
+
+
+def test_manual_episode_provenance_deduplication_and_deletion(repo):
+    result = repo.add('default:alice', '保留此问答', 'episode', [1, 0, 0], 'v1', source=('chat', 'answer'))
+    assert result['created']
+    assert not repo.add('default:alice', '保留此问答', 'episode', [1, 0, 0], 'v1', source=('chat', 'answer'))['created']
+    with repo.connect() as db:
+        count = db.execute(
+            'SELECT count(*) AS n FROM memory_source WHERE memory_id=%s', (result['id'],)
+        ).fetchone()['n']
+        assert count == 1
+    assert repo.list('other:alice') == []
+    assert repo.delete('default:alice', result['id'])
+    with repo.connect() as db:
+        count = db.execute(
+            'SELECT count(*) AS n FROM memory_source WHERE memory_id=%s', (result['id'],)
+        ).fetchone()['n']
+        assert count == 0

@@ -1,59 +1,35 @@
 # Chat Effort
 
-The composer shows `none`, `low`, `medium`, `high`, `extra high`. Unsupported
-choices are disabled, not silently sent. A supported model defaults to `high`;
-if metadata excludes high, the strongest declared level is used. Unknown models
-offer only `none` and omit the parameter. Switching models restores that
-model's selection from the existing per-chat params (`kakam_effort`). The capsule opens a cascading model/effort menu. Compare mode configures each
-model in its own submenu; each request retains that model's valid default or
-saved selection. The capsule summarizes the first model and the additional model
-count. Desktop and phone use the same fixed-size two-step panel; a back action
-returns from effort to the model list without changing the selection. Model and
-effort are committed together when an effort is chosen.
+All models offer `none`, `low`, `medium`, `high`, and `extra high`; the default
+is `high` when no per-model selection is saved. Capability metadata and probe
+results do not disable choices, including for unknown reseller aliases. Existing
+per-model selections persist in the chat's `kakam_effort` params. Compare mode
+and @model overrides resolve each request independently.
 
-Detection is conservative: exact API IDs/base IDs and dated snapshots of
-`gpt-6-astra`, `gpt-5.5`, `gpt-5.2`, and `gpt-5` are recognized. Display names,
-unknown aliases, DeepSeek, Claude and MiniMax names alone do not establish support
-for the OpenAI-compatible `reasoning_effort` parameter. Native provider thinking
-APIs are not automatically translated.
+The capsule opens a fixed-size two-step model/effort menu on desktop and phone.
+Going back does not commit a selection; choosing an effort commits the model and
+effort together. The capsule summarizes the first model and additional model count.
 
-Use a model's existing JSON import/update support to declare capability in
-`meta.reasoning_effort` (exposed to the frontend as `model.info.meta`):
+`none` means **omit effort**, not send the literal string `none`. It removes stale
+`reasoning_effort` and `reasoning.effort` from global/custom parameters and, through
+the BFF override, saved cloud-model defaults. The provider can still apply its own
+default thinking behavior. This is the compatibility fallback for providers that
+reject effort parameters. Other reasoning fields such as `summary` are preserved.
 
-```json
-{
-  "meta": {
-    "reasoning_effort": ["none", "low", "medium", "high", "xhigh"]
-  }
-}
-```
+`extra high` maps to `max` if explicitly advertised by model/provider metadata,
+otherwise `xhigh`. Metadata is advisory and only helps with this wire encoding.
+Native provider-specific thinking APIs are not automatically translated.
 
-Declare only levels accepted by that connection. `false` disables support;
-`true` declares low/medium/high; an explicit array is preferred. An empty array
-also disables support. `meta.capabilities.reasoning_effort` is accepted as a
-fallback. Explicit metadata takes priority over built-in recognition. Ollama and
-arena models do not expose this control. Do not advertise `none` when the model
-requires reasoning (for example GPT-6 Astra).
+The BFF consumes `_kakam_reasoning_effort` after saved cloud-model defaults and
+strips the private marker. Direct/function paths consume it before dispatch.
+OpenAI Responses uses `reasoning.effort`. Legacy UI markers with value `none` are
+also treated as omission. Requests without a marker retain native default handling;
+this does not change non-UI API clients or native Ollama protocol conversion.
 
-The UI's `extra high` maps to API `xhigh`. The BFF consumes
-`_kakam_reasoning_effort` after saved model defaults, removes stale effort from
-unsupported requests, and strips the private marker. Direct and function paths
-consume it before dispatch. OpenAI Responses connections use `reasoning.effort`.
-Calls without the marker retain existing default behavior. The composer overrides
-older Advanced Params Effort values for UI chat requests without deleting saved
-settings. Other sampling/custom parameters remain unchanged.
+Chat errors retain their original content and mount `EffortErrorHint.svelte`,
+which suggests choosing `none` and retrying if the provider rejects the selected
+effort. The hint does not diagnose all failures as effort-related, change the user's
+selection, or automatically retry an inference request.
 
-Capability references checked 2026-09-20:
-
-- https://developers.openai.com/api/docs/models/gpt-6-astra
-- https://developers.openai.com/api/docs/models/gpt-5.5
-- https://developers.openai.com/api/docs/models/gpt-5.2
-- https://developers.openai.com/api/docs/models/gpt-5
-- https://developers.openai.com/api/docs/guides/reasoning
-
-Validation:
-
-```sh
-npx vitest run src/lib/kakam
-python3 -m unittest discover -s backend/open_webui/kakam -p test_effort.py -v
-```
+Validation: `npx vitest run src/lib/kakam/chat src/lib/kakam/providers src/lib/kakam/handoff`
+and `backend/open_webui/kakam/chat/test_effort.py` (including native Responses conversion).

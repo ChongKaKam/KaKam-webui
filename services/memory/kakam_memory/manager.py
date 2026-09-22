@@ -2,13 +2,13 @@
 
 import asyncio
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from .contracts import Collection, Compact, Decision, Edit, Handoff, Membership, Prepare, Proposal, Scope
-from .domain import SECRET, TTLCache, fingerprint, select_memories, validate_content
+from .domain import SECRET, TTLCache, fingerprint, is_unexpired, select_memories, validate_content
 from .manager_repository import ManagerRepository
 from .policy import POLICY_REGISTRY, PolicyTask
 
@@ -189,15 +189,7 @@ def router(repo, owner, resolve):
             if body.cache:
                 cache.put(key, result)
         now = datetime.now(timezone.utc)
-        result['memories'] = [
-            r
-            for r in result['memories']
-            if r['expires_at'] > now
-            and (
-                session['selections'].get(str(r['id'])) == 'prefer'
-                or r['updated_at'] >= now - timedelta(days=body.days)
-            )
-        ]
+        result['memories'] = [r for r in result['memories'] if is_unexpired(r, now)]
         result['cache_hit'] = hit
         result['operation_id'] = await asyncio.to_thread(
             state.operation,

@@ -2,7 +2,7 @@ import asyncio
 import hmac
 import re
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Literal
 from uuid import UUID
 
@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from .admin import router as admin_router
 from .config import Settings
-from .domain import SECRET, TTLCache, fingerprint, select_memories, validate_content
+from .domain import SECRET, TTLCache, fingerprint, is_unexpired, select_memories, validate_content
 from .manager import router as manager_router
 from .policy import POLICY_REGISTRY
 from .provider_config import ConfigStore
@@ -23,14 +23,20 @@ from .repository import Repository
 
 class Recall(BaseModel):
     query: str = Field(max_length=8000)
-    days: int = Field(default=30, ge=7, le=30)
+    days: int = Field(default=30, ge=7, le=30, description='Recent-memory ranking window, not retention')
     policy: Literal['default'] = 'default'
     cache: bool = True
+
+
+class MemorySource(BaseModel):
+    external_chat_id: str = Field(min_length=1, max_length=256)
+    external_message_id: str = Field(min_length=1, max_length=256)
 
 
 class NewMemory(BaseModel):
     content: str
     kind: Literal['profile', 'preference', 'instruction', 'fact', 'episode'] = 'fact'
+    source: MemorySource | None = None
 
     @field_validator('content')
     @classmethod
@@ -49,7 +55,7 @@ class MemoryRead(BaseModel):
     kind: Literal['profile', 'preference', 'instruction', 'fact', 'episode']
     content: str
     pinned: bool = False
-    expires_at: datetime
+    expires_at: datetime | None
     version: int = 1
     tags: list[str] = Field(default_factory=list)
 
@@ -119,7 +125,8 @@ def create_app(settings=None, repository=None, providers=None):
     async def add(body: NewMemory, user=Depends(owner), runtime=Depends(resolve)):
         cfg, provider = runtime
         vector = await provider.embed(body.content, user)
-        return await asyncio.to_thread(repo.add, user, body.content, body.kind, vector, cfg.embedding_version)
+        kwargs = {'source': (body.source.external_chat_id, body.source.external_message_id)} if body.source else {}
+        return await asyncio.to_thread(repo.add, user, body.content, body.kind, vector, cfg.embedding_version, **kwargs)
 
     @app.delete('/v1/memories/{memory_id}')
     def delete(memory_id: UUID, user=Depends(owner)):
@@ -152,7 +159,7 @@ def create_app(settings=None, repository=None, providers=None):
                 cache.put(key, rows)
         # Expiry is rechecked on cache hits as well.
         now = datetime.now(timezone.utc)
-        rows = [row for row in rows if row['expires_at'] > now and row['updated_at'] >= now - timedelta(days=body.days)]
+        rows = [row for row in rows if is_unexpired(row, now)]
         return {'policy': body.policy, 'memories': rows, 'cache_hit': hit, 'revision': revision}
 
     @app.post('/v1/events/turn-completed', status_code=202)

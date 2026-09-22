@@ -1,0 +1,15 @@
+[
+  {"content":"recent related episode", "kind":"episode", "age":2, "similarity":0.6, "expected":true},
+  {"content":"old weakly related episode", "kind":"episode", "age":90, "similarity":0.6, "expected":false},
+  {"content":"old highly related answer", "kind":"episode", "age":365, "similarity":0.95, "expected":true},
+  {"content":"recent irrelevant fact", "kind":"fact", "age":2, "similarity":0.1, "expected":false},
+  {"content":"old language preference", "kind":"preference", "age":365, "similarity":0.1, "expected":true},
+  {"content":"old profile", "kind":"profile", "age":365, "similarity":0.1, "expected":true},
+  {"content":"old explicit instruction", "kind":"instruction", "age":365, "similarity":0.1, "expected":true},
+  {"content":"old pinned memory", "kind":"fact", "age":365, "similarity":0.1, "pinned":true, "expected":true},
+  {"content":"superseded conflict", "kind":"fact", "age":2, "similarity":1, "status":"superseded", "expected":false},
+  {"content":"explicitly forgotten", "kind":"fact", "age":2, "similarity":1, "status":"deleted", "expected":false},
+  {"content":"explicitly expired", "kind":"fact", "age":2, "similarity":1, "expired":true, "expected":false},
+  {"content":"foreign tenant record", "kind":"fact", "age":2, "similarity":1, "owner":"other:alice", "expected":false},
+  {"content":"foreign user record", "kind":"fact", "age":2, "similarity":1, "owner":"default:bob", "expected":false}
+]

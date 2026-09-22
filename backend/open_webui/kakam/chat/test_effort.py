@@ -18,11 +18,19 @@ class EffortOverrideTest(unittest.TestCase):
         self.assertEqual(payload, {'reasoning': {'summary': 'auto'}, 'temperature': 0.7})
 
     def test_valid_choice_overrides_model_default_and_removes_marker(self):
-        for value in ['none', 'low', 'medium', 'high', 'xhigh', 'max']:
+        for value in ['low', 'medium', 'high', 'xhigh', 'max']:
             with self.subTest(value=value):
                 payload = {'_kakam_reasoning_effort': value, 'reasoning_effort': 'medium'}
                 apply_effort_override(payload)
                 self.assertEqual(payload, {'reasoning_effort': value})
+
+    def test_none_removes_effort_including_legacy_ui_marker(self):
+        for value in [None, 'none']:
+            payload = {'_kakam_reasoning_effort': value, 'reasoning_effort': 'high',
+                       'reasoning': {'effort': 'high', 'summary': 'auto'}}
+            apply_effort_override(payload)
+            convert_effort_to_responses(payload)
+            self.assertEqual(payload, {'reasoning': {'summary': 'auto'}})
 
     def test_invalid_values_never_reach_provider(self):
         for value in ['extra high', 'ultra', {}, [], 1]:

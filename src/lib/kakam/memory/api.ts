@@ -24,8 +24,11 @@ export const getContextDetails = (id: string) =>
 export const getMemoryActivity = (days: number) =>
 	request<MemoryActivity>(`/activity?days=${days}`);
 export const getMemories = () => request<Memory[]>('');
-export const addMemory = (content: string) =>
-	request<{ created: boolean }>('', 'POST', { content });
+export type MemorySource = { external_chat_id: string; external_message_id: string };
+export const addMemory = (
+	content: string,
+	options: { kind?: 'episode'; source?: MemorySource } = {}
+) => request<{ created: boolean; id?: string | null }>('', 'POST', { content, ...options });
 export const deleteMemory = (id: string) => request(`/${encodeURIComponent(id)}`, 'DELETE');
 export const inspectSession = (id: string) =>
 	request<ManagerView>(`/manager/sessions/${encodeURIComponent(id)}`);

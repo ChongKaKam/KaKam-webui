@@ -264,7 +264,9 @@ class ConfigStore:
             )
             if space_changed:
                 count = db.execute(
-                    "SELECT count(*) AS n FROM memory_item WHERE tenant_id=%s AND status='active' AND expires_at>now()",
+                    """SELECT count(*) AS n FROM memory_item
+                    WHERE tenant_id=%s AND status='active'
+                    AND (expires_at IS NULL OR expires_at>now())""",
                     (tenant(owner),),
                 ).fetchone()['n']
                 if count and not form.acknowledge_reindex:

@@ -57,16 +57,14 @@ Aliases such as `dpsk-4.1-flash` at resellers remain unknown unless metadata sup
 levels; provider names alone are not trusted capability evidence. These results
 describe advertised support, not a measured change in inference behavior.
 
-Native administrator model metadata (`info.meta.reasoning_effort`, then
-`info.meta.capabilities.reasoning_effort`) remains the highest-priority override.
-Without an override, a detected unknown/unsupported result prevents name-based
-fallback. Legacy snapshots without capability results retain previous behavior.
-The same ID at different suppliers retains independent capability results.
+Capability results are advisory. Every model offers all five UI levels and defaults
+to `high` unless a per-model selection is saved, including unknown and explicitly
+unsupported results. Native administrator metadata takes priority only when choosing
+the wire spelling of `extra high`: advertised `max`, otherwise `xhigh`. Missing
+`medium` or negative capability metadata no longer disables a UI choice.
 
-UI `extra high` maps to advertised `max` when available, otherwise `xhigh`;
-DeepSeek therefore uses `max`, and absent `medium` stays disabled. A supported
-model defaults to `high` when offered. Unknown models still display `none` but
-omit the parameter, which is not a request to turn off the provider's own default
-thinking. The BFF validates the snapshot, exposes only the capability contract,
-and retains it through native preset inheritance. Malformed saved capability
-data falls back to unknown without breaking the model list or login.
+`none` omits the effort parameter and clears saved cloud-model effort defaults.
+On a failed call, the chat error display suggests choosing `none` and retrying if
+the provider rejects effort. It does not automatically retry or assert that effort
+caused the error. The BFF still validates and preserves bounded capability snapshots;
+malformed saved data falls back to unknown without breaking the model list or login.

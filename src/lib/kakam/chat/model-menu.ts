@@ -5,7 +5,7 @@ export type ModelMenuItem = {
 	model: EffortModel & { info?: { meta?: { description?: string; hidden?: boolean } } };
 };
 export const effortDescriptions: Record<Effort, string> = {
-	none: '不使用额外思考',
+	none: '不发送思考强度参数，使用供应商默认行为',
 	low: '更快响应，适合轻量任务',
 	medium: '兼顾响应速度与推理深度',
 	high: '深入思考，适合复杂任务',

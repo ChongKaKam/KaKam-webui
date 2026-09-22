@@ -6,7 +6,6 @@
 		effortLevels,
 		selectedEffort,
 		selectEffort,
-		supportedEfforts,
 		type ChatParams,
 		type Effort
 	} from '../effort';
@@ -32,7 +31,6 @@
 	$: effectiveValues = activeModelId ? [activeModelId] : values;
 	$: current = items.find((item) => item.value === (activeModelId ?? values[0]));
 	$: active = visible.find((item) => item.value === activeId);
-	$: allowed = supportedEfforts(active?.model);
 	$: currentEffort = selectedEffort(current?.model, params);
 	$: if (!show) {
 		activeId = '';
@@ -213,13 +211,11 @@
 				<button class="back" type="button" on:click={back}>‹ 返回模型</button>
 				<div class="menu-heading">思考强度<span class="description">{active.label}</span></div>
 				{#each effortLevels as level}
-					{@const enabled = allowed.length ? allowed.includes(level) : level === 'none'}
 					<button
 						type="button"
 						role="menuitemradio"
 						data-effort={level}
 						aria-checked={selectedEffort(active.model, params) === level}
-						disabled={!enabled}
 						on:click={() => selectLevel(active, level)}
 					>
 						<span class="check" aria-hidden="true"
@@ -227,14 +223,7 @@
 						>
 						<span class="item-copy"
 							><span class="item-label">{level}</span><span class="description"
-								>{!allowed.length && level === 'none'
-									? '此模型不附加思考强度参数'
-									: enabled
-										? effortDescriptions[level]
-										: !allowed.length &&
-											  active.model.kakam_provider?.reasoning?.status !== 'unsupported'
-											? '尚未确认此档位'
-											: '此模型不支持此档位'}</span
+								>{effortDescriptions[level]}</span
 							></span
 						>
 					</button>

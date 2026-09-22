@@ -1,4 +1,4 @@
-"""Default policy: bounded, evidence-backed memories within a rolling window."""
+"""Default policy: bounded, evidence-backed memories with a recent-memory preference."""
 
 import hashlib
 import json
@@ -12,8 +12,8 @@ POLICIES = [
     {
         'id': 'default',
         'name': 'Default',
-        'version': '1',
-        'description': 'System + recent long-term memory + current session + current prompt',
+        'version': '3',
+        'description': 'System + relevant long-term memory (recent preferred) + current session + current prompt',
         'min_days': 7,
         'max_days': 30,
     }
@@ -22,6 +22,11 @@ KINDS = {'profile', 'preference', 'instruction', 'fact', 'episode'}
 SECRET = re.compile(
     r'sk-[\w-]{12,}|-----BEGIN .*PRIVATE KEY|(?:password|passwd|api[_ -]?key|token|密码|密钥)\s*[:=：]\s*\S+', re.I
 )
+
+
+def is_unexpired(row, now):
+    """NULL expiry is durable; explicit deadlines remain authoritative."""
+    return row['expires_at'] is None or row['expires_at'] > now
 
 
 def fingerprint(value: str) -> str:

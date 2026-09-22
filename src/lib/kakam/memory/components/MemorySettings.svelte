@@ -123,14 +123,14 @@
 			</select>
 		</label>
 		<label class="flex items-center justify-between"
-			>长期记忆窗口
+			>近期召回优先窗口
 			<select
 				class="rounded border border-gray-200 bg-transparent p-1 dark:border-gray-700"
 				bind:value={prefs.days}
 				disabled={busy}
 				on:change={save}
 			>
-				{#each [7, 14, 30] as days}<option value={days}>最近 {days} 天</option>{/each}
+				{#each [7, 14, 30] as days}<option value={days}>优先最近 {days} 天</option>{/each}
 			</select>
 		</label>
 		<label class="flex justify-between"
@@ -142,6 +142,7 @@
 			/></label
 		>
 		<p class="text-gray-500 leading-relaxed">
+			记忆默认长期保留；此窗口只影响召回优先级，不会删除旧记忆。置顶、稳定偏好和高度相关的旧记忆仍可召回。
 			System → 长期记忆 → 当前分支的 Session 历史 → 当前
 			Prompt。临时聊天不读写长期记忆。只有主动保存或确认模型建议才会写入。每个会话的优先/排除、压缩、分类和集合在
 			Context 侧栏管理。
@@ -176,7 +177,9 @@
 						<div>
 							<p class="whitespace-pre-wrap break-words">{memory.content}</p>
 							<small class="text-gray-500"
-								>{memory.kind} · 到期 {new Date(memory.expires_at).toLocaleDateString()}</small
+								>{memory.kind} · {memory.expires_at
+									? `到期 ${new Date(memory.expires_at).toLocaleDateString()}`
+									: '长期保留'}</small
 							>
 						</div>
 						<button

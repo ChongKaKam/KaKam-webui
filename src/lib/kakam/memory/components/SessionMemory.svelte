@@ -192,9 +192,9 @@
 					>
 						<p class="whitespace-pre-wrap break-words">{memory.content}</p>
 						<p class="mt-1 text-gray-500">
-							{memory.kind} · {(memory.tags ?? []).join(' · ')} · {new Date(
-								memory.expires_at
-							).toLocaleDateString()} 到期
+							{memory.kind} · {(memory.tags ?? []).join(' · ')} · {memory.expires_at
+								? `到期 ${new Date(memory.expires_at).toLocaleDateString()}`
+								: '长期保留'}
 						</p>
 						<div class="mt-2 flex flex-wrap items-center gap-2">
 							<select

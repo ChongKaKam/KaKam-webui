@@ -34,7 +34,7 @@ class FakeRepository:
             kind=kind,
             pinned=False,
             updated_at=datetime.now(timezone.utc),
-            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+            expires_at=None,
         )
         self.revisions[owner] = self.revision(owner) + 1
         return {'created': True}
@@ -105,15 +105,33 @@ def test_crud_isolation_cache_revision_and_preferences(setup):
     assert not result['cache_hit'] and result['memories'] == []
 
 
-def test_stale_data_filtered_even_on_cache_hit(setup):
+def test_old_durable_memory_survives_cache_hits_but_expiry_still_applies(setup, monkeypatch):
+    import kakam_memory.app as module
+
     client, repo = setup
-    repo.add('default:alice', 'stale', 'fact', [], '')
+    repo.add('default:alice', 'old but relevant', 'fact', [], '')
     row = next(iter(repo.rows['default:alice'].values()))
-    row['updated_at'] = datetime.now(timezone.utc) - timedelta(days=8)
-    for _ in range(2):
-        assert client.post('/v1/recall', headers=headers(), json={'query': '', 'days': 7}).json()['memories'] == []
-    row['expires_at'] = datetime.now(timezone.utc) - timedelta(seconds=1)
-    assert client.post('/v1/recall', headers=headers(), json={'query': '', 'days': 30}).json()['memories'] == []
+    row['updated_at'] = datetime.now(timezone.utc) - timedelta(days=365)
+    body = {'query': '', 'days': 7}
+    for hit in (False, True):
+        response = client.post('/v1/recall', headers=headers(), json=body).json()
+        assert response['cache_hit'] == hit
+        assert response['memories'][0]['expires_at'] is None
+    # A different query avoids the durable-result cache; explicit expiry must be
+    # rechecked when that result subsequently comes from cache.
+    now = datetime.now(timezone.utc)
+    row['expires_at'] = now + timedelta(minutes=1)
+    body['query'] = 'expiry'
+    assert client.post('/v1/recall', headers=headers(), json=body).json()['memories']
+
+    class Later(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return now + timedelta(minutes=2)
+
+    monkeypatch.setattr(module, 'datetime', Later)
+    response = client.post('/v1/recall', headers=headers(), json=body).json()
+    assert response['cache_hit'] and response['memories'] == []
 
 
 @pytest.mark.parametrize(
@@ -134,3 +152,41 @@ def test_jobs_idempotent_private_and_secrets_rejected(setup):
         assert not client.post('/v1/events/turn-completed', headers=headers(), json={**body, **update}).json()['queued']
     assert client.post('/v1/memories', headers=headers(), json={'content': 'api-key: sensitive'}).status_code == 422
     assert client.post('/v1/recall', headers=headers(), json={'query': 'api-key: sensitive'}).json()['memories'] == []
+
+
+def test_manual_episode_preserves_opaque_source_and_owner(setup, monkeypatch):
+
+    client, repo = setup
+    original = repo.add
+    seen = []
+
+    def with_source(owner, content, kind, vector, version, source=None):
+        seen.append((owner, kind, source))
+        return original(owner, content, kind, vector, version)
+
+    monkeypatch.setattr(repo, 'add', with_source)
+    body = {'content': '用户确认保留的问答：备份数据库。', 'kind': 'episode',
+            'source': {'external_chat_id': 'opaque-chat', 'external_message_id': 'opaque-answer'}}
+    assert client.post('/v1/memories', headers=headers(), json=body).json()['created']
+    assert seen == [('default:alice', 'episode', ('opaque-chat', 'opaque-answer'))]
+    assert not client.post('/v1/memories', headers=headers(), json=body).json()['created']
+    assert client.get('/v1/memories', headers=headers('bob')).json() == []
+    tenant = {**headers(), 'X-Memory-Tenant': 'other'}
+    assert client.get('/v1/memories', headers=tenant).json() == []
+    assert client.post('/v1/memories', headers=tenant, json=body).json()['created']
+
+
+def test_remember_rejects_secrets_and_oversize_before_embedding(setup, monkeypatch):
+    from unittest.mock import AsyncMock, Mock
+
+    client, repo = setup
+    saved = Mock(wraps=repo.add)
+    embedding = AsyncMock(return_value=[1, 0, 0])
+    monkeypatch.setattr(FakeProviders, 'embed', embedding)
+    monkeypatch.setattr(repo, 'add', saved)
+    for text in ['password: private-value', 'a' * 2001, '']:
+        response = client.post('/v1/memories', headers=headers(), json={'content': text, 'kind': 'episode'})
+        assert response.status_code == 422
+        assert text not in response.text if text else True
+    saved.assert_not_called()
+    embedding.assert_not_called()
