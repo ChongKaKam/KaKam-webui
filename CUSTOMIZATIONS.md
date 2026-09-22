@@ -302,3 +302,19 @@ retention and provenance persistence. No native Memory tables are used. The
 independent service migration `004_durable_memory.sql` separates indefinite
 retention from recent-preferred recall; see `services/memory/RETENTION.md` and
 `src/lib/kakam/memory/REMEMBER.md`. The existing Memory README is unchanged.
+
+## Minimal homepage and administrator token usage
+
+| Upstream file | Integration |
+| --- | --- |
+| `src/lib/components/chat/Placeholder.svelte` | Replace suggestions with project-owned `shared/components/HomeFooter.svelte`, retaining branding and folder content while keeping the homepage free of usage panels and prompts. |
+| `src/lib/components/chat/ChatPlaceholder.svelte` | Apply the same minimal footer to the alternate chat landing layout. |
+| `src/lib/components/chat/SettingsModal.svelte` | Register an admin-only Data entry, 本站 Token 使用情况, and mount `usage/components/SiteTokenUsage.svelte`. Existing settings scrolling, search and mobile navigation are reused. |
+| `backend/open_webui/main.py` | Register the admin-only read-only `/api/custom/usage/site` router from `kakam/usage`. |
+
+The BFF reuses native `ChatMessages.get_token_usage_by_user` without time, user
+or group filters and sums every user's retained input/output usage. Only totals,
+recorded-user count and recorded-response count leave this endpoint, never user
+identities or chat content. The earlier homepage `/daily` endpoint is removed.
+No production dependencies, migrations or provider inference calls are added.
+See `src/lib/kakam/usage/README.md` for scope and validation.

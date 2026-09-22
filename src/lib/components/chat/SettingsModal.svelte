@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SiteTokenUsage from '$lib/kakam/usage/components/SiteTokenUsage.svelte';
 	import MobileSettingsNav from '$lib/kakam/settings/components/MobileSettingsNav.svelte';
 	import MemoryPolicySettings from '$lib/kakam/memory/components/MemoryPolicySettings.svelte';
 	import MemoryAdminSettings from '$lib/kakam/memory/admin/components/MemoryAdminSettings.svelte';
@@ -171,6 +172,7 @@
 		'admin:interface': 'Experience',
 		'admin:audio': 'Experience',
 		'admin:images': 'Experience',
+		'admin:site-usage': 'Data',
 		'admin:db': 'Data'
 	};
 	const settingGroupTitle = (tabId: string) =>
@@ -794,6 +796,11 @@
 		},
 
 		{
+			id: 'admin:site-usage',
+			title: '本站 Token 使用情况',
+			keywords: ['tokens', 'usage', '本站', '用量', '统计', '总量']
+		},
+		{
 			id: 'admin:db',
 			title: 'Database',
 			keywords: ['database', 'export', 'import', 'backup', 'chats', 'users']
@@ -1210,7 +1217,7 @@
 								selectedTab = tab.id;
 							}}
 						>
-							<AdminTabIcon id={tab.id === 'admin:memory' ? 'db' : adminTabSegment(tab.id)} className="size-3.5" strokeWidth="2" />
+							<AdminTabIcon id={['admin:memory', 'admin:site-usage'].includes(tab.id) ? 'db' : adminTabSegment(tab.id)} className="size-3.5" strokeWidth="2" />
 							<span>{$i18n.t(tab.title)}</span>
 						</button>
 					{/if}
@@ -1338,6 +1345,8 @@
 						toast.success($i18n.t('Settings saved successfully!'));
 					}}
 				/>
+			{:else if selectedTab === 'admin:site-usage' && $user?.role === 'admin'}
+				<SiteTokenUsage />
 			{:else if selectedTab === 'admin:db'}
 				<AdminDatabase
 					saveHandler={() => {
