@@ -143,6 +143,7 @@ from open_webui.kakam.memory.manager import router as kakam_manager_router
 from open_webui.kakam.memory.admin import router as kakam_memory_admin_router
 from open_webui.kakam.images.router import router as kakam_images_router
 from open_webui.kakam.usage.router import router as kakam_usage_router
+from open_webui.kakam.jev.router import router as kakam_jev_router
 from open_webui.models.functions import Functions
 from open_webui.models.messages import Messages
 from open_webui.models.models import Models, normalize_model_tags
@@ -831,6 +832,7 @@ app.include_router(tasks.router, prefix='/api/v1/tasks', tags=['tasks'])
 app.include_router(images.router, prefix='/api/v1/images', tags=['images'])
 app.include_router(kakam_images_router, prefix='/api/custom/images', tags=['kakam-images'])
 app.include_router(kakam_usage_router, prefix='/api/custom/usage', tags=['kakam-usage'])
+app.include_router(kakam_jev_router, prefix='/api/custom/jev', tags=['kakam-jev'])
 
 app.include_router(audio.router, prefix='/api/v1/audio', tags=['audio'])
 app.include_router(retrieval.router, prefix='/api/v1/retrieval', tags=['retrieval'])

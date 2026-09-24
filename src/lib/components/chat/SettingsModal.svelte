@@ -1,5 +1,6 @@
 <script lang="ts">
 	import SiteTokenUsage from '$lib/kakam/usage/components/SiteTokenUsage.svelte';
+	import JevSettings from '$lib/kakam/jev/components/JevSettings.svelte';
 	import MobileSettingsNav from '$lib/kakam/settings/components/MobileSettingsNav.svelte';
 	import MemoryPolicySettings from '$lib/kakam/memory/components/MemoryPolicySettings.svelte';
 	import MemoryAdminSettings from '$lib/kakam/memory/admin/components/MemoryAdminSettings.svelte';
@@ -159,6 +160,7 @@
 		'admin:general': 'System',
 		'admin:authentication': 'System',
 		'admin:connections': 'AI',
+		'admin:jev': 'AI',
 		'admin:memory': 'AI',
 		'admin:models': 'AI',
 		'admin:subagents': 'AI',
@@ -720,6 +722,11 @@
 			]
 		},
 		{
+			id: 'admin:jev',
+			title: 'Jev 模型管理',
+			keywords: ['jev', 'typesafe', 'defer to', '决策', 'api key', 'base url']
+		},
+		{
 			id: 'admin:memory',
 			title: 'Memory 服务',
 			keywords: ['memory', 'context', 'embedding', '记忆', '压缩', 'api key', 'base url']
@@ -1217,7 +1224,7 @@
 								selectedTab = tab.id;
 							}}
 						>
-							<AdminTabIcon id={['admin:memory', 'admin:site-usage'].includes(tab.id) ? 'db' : adminTabSegment(tab.id)} className="size-3.5" strokeWidth="2" />
+							<AdminTabIcon id={tab.id === 'admin:jev' ? 'connections' : ['admin:memory', 'admin:site-usage'].includes(tab.id) ? 'db' : adminTabSegment(tab.id)} className="size-3.5" strokeWidth="2" />
 							<span>{$i18n.t(tab.title)}</span>
 						</button>
 					{/if}
@@ -1311,6 +1318,8 @@
 				/>
 			{:else if selectedTab === 'admin:memory' && $user?.role === 'admin'}
 				<MemoryAdminSettings />
+			{:else if selectedTab === 'admin:jev' && $user?.role === 'admin'}
+				<JevSettings />
 			{:else if selectedTab === 'admin:models'}
 				<AdminModels bind:tabState />
 			{:else if selectedTab === 'admin:subagents'}

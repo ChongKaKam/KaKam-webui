@@ -1,5 +1,6 @@
 <script lang="ts">
 	import MemorySidebarItem from '$lib/kakam/memory/components/MemorySidebarItem.svelte';
+	import JevSidebarItem from '$lib/kakam/jev/components/JevSidebarItem.svelte';
 	import { toast } from 'svelte-sonner';
 	import { v4 as uuidv4 } from 'uuid';
 	import Sortable from 'sortablejs';
@@ -1027,6 +1028,7 @@
 					</div>
 
 					<MemorySidebarItem compact />
+					<JevSidebarItem compact />
 
 					{#each pinnedItems as itemId (itemId)}
 						{@const meta = getMenuItemMeta(itemId)}
@@ -1254,6 +1256,7 @@
 						</div>
 
 						<MemorySidebarItem />
+						<JevSidebarItem />
 
 						<div id="pinned-menu-items-list">
 							{#each pinnedItems as itemId (itemId)}

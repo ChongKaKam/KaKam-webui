@@ -318,3 +318,21 @@ recorded-user count and recorded-response count leave this endpoint, never user
 identities or chat content. The earlier homepage `/daily` endpoint is removed.
 No production dependencies, migrations or provider inference calls are added.
 See `src/lib/kakam/usage/README.md` for scope and validation.
+
+## Jev decision provider and defer to
+
+| Upstream file | Reason and integration |
+| --- | --- |
+| `backend/open_webui/main.py` | Import and register `kakam/jev/router.py` at `/api/custom/jev`; credentials, TypeSafe transport, skill context and orchestration remain in the custom module. |
+| `src/lib/components/chat/SettingsModal.svelte` | Add the admin-only Jev model management entry beside LLM provider settings and mount `src/lib/kakam/jev/components/JevSettings.svelte`. |
+| `src/lib/components/layout/Sidebar.svelte` | Mount `JevSidebarItem.svelte` in expanded and compact navigation; it links to the dedicated defer to route. |
+| `src/routes/(app)/defer-to/+page.svelte` (new route) | Minimal route wrapper mounting the project-owned `DeferPage.svelte`; the app layout supplies existing login and sidebar behavior. |
+
+Jev uses the independent TypeSafe v1 decision API, not an OpenAI-compatible model
+entry. The selected LLM uses native server-side provider dispatch and access checks
+for English input compilation and localized result presentation. The bundled,
+versioned official TypeSafe skill is applied on every compilation. Structured
+Choice/Score/Noul results and probabilities are preserved independently of LLM
+presentation. No changes to native Memory, chats, model registries or provider
+routers are needed. See `backend/open_webui/kakam/jev/README.md` for configuration,
+internal reuse, contracts, limits and validation.
