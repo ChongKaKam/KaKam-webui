@@ -1,0 +1,715 @@
+.kakam-library {
+	--lib-bg: #fff;
+	--lib-soft: #f7f7f5;
+	--lib-border: #e9e9e6;
+	--lib-ink: #30322f;
+	--lib-muted: #72766e;
+	--lib-hover: #f2f3f0;
+	--lib-focus: #708a73;
+	height: 100%;
+	min-height: 0;
+	overflow-y: auto;
+	padding: 16px 8px 36px 2px;
+	color: var(--lib-ink);
+	font-size: 14px;
+	container-type: inline-size;
+}
+.dark .kakam-library {
+	--lib-bg: #191b1a;
+	--lib-soft: #202320;
+	--lib-border: #333733;
+	--lib-ink: #e9ece7;
+	--lib-muted: #a2aaa0;
+	--lib-hover: #292e29;
+	--lib-focus: #9eb79f;
+}
+.kakam-library button,
+.kakam-library select,
+.kakam-library a,
+.kakam-library input {
+	-webkit-tap-highlight-color: transparent;
+}
+.kakam-library button {
+	cursor: pointer;
+}
+.kakam-library button:disabled {
+	cursor: default;
+	opacity: 0.45;
+}
+.kakam-library :is(button, a, input, select, summary):focus-visible {
+	outline: 2px solid var(--lib-focus);
+	outline-offset: 3px;
+}
+.kakam-library svg {
+	flex-shrink: 0;
+}
+.kakam-library .lib-eyebrow {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	color: var(--lib-muted);
+	font-size: 12px;
+}
+.kakam-library .lib-eyebrow > span {
+	opacity: 0.5;
+}
+.kakam-library .lib-page-header h2 {
+	margin: 20px 0 7px;
+	font-size: 30px;
+	font-weight: 650;
+	letter-spacing: -0.9px;
+	line-height: 1.35;
+	outline: none;
+}
+.kakam-library .lib-description {
+	margin: 0;
+	color: var(--lib-muted);
+	font-size: 13px;
+	line-height: 1.8;
+}
+.kakam-library .lib-view-tabs {
+	display: flex;
+	align-items: center;
+	gap: 24px;
+	margin: 27px 0 20px;
+	border-bottom: 1px solid var(--lib-border);
+}
+.kakam-library .lib-view-tabs button {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	padding: 0 1px 12px;
+	color: var(--lib-muted);
+	font-size: 13px;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -1px;
+}
+.kakam-library .lib-view-tabs button.active {
+	color: var(--lib-ink);
+	border-bottom-color: var(--lib-ink);
+	font-weight: 600;
+}
+.kakam-library .lib-gallery-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 22px;
+}
+.kakam-library .lib-search {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 100px;
+	padding: 0 11px;
+	height: 36px;
+	border: 1px solid var(--lib-border);
+	border-radius: 6px;
+	color: var(--lib-muted);
+	flex: 1;
+	background: var(--lib-bg);
+}
+.kakam-library .lib-search input {
+	min-width: 0;
+	width: 100%;
+	height: 100%;
+	background: transparent;
+	border: none;
+	font-size: 12px;
+	color: var(--lib-ink);
+	padding: 0;
+}
+.kakam-library .lib-search:focus-within {
+	outline: 2px solid var(--lib-focus);
+	outline-offset: 1px;
+}
+.kakam-library .lib-search input:focus {
+	outline: none;
+	box-shadow: none;
+}
+.kakam-library .lib-group-filter {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	border: 1px solid var(--lib-border);
+	border-radius: 6px;
+	padding-left: 10px;
+	color: var(--lib-muted);
+	max-width: 210px;
+	height: 36px;
+}
+.kakam-library .lib-group-filter select {
+	min-width: 0;
+	width: 100%;
+	padding: 4px 25px 4px 4px;
+	font-size: 12px;
+	background-color: transparent;
+	color: var(--lib-ink);
+	border: none;
+}
+.kakam-library .lib-group-filter option {
+	background: var(--lib-bg);
+	color: var(--lib-ink);
+}
+.kakam-library .lib-button,
+.kakam-library .lib-icon-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 7px;
+	min-height: 36px;
+	padding: 6px 12px;
+	border: 1px solid var(--lib-border);
+	border-radius: 6px;
+	background: var(--lib-bg);
+	color: var(--lib-ink);
+	font-size: 12px;
+	white-space: nowrap;
+}
+.kakam-library .lib-icon-button {
+	padding: 8px;
+}
+.kakam-library .lib-button:hover,
+.kakam-library .lib-icon-button:hover {
+	background: var(--lib-hover);
+}
+.kakam-library .lib-button-small {
+	min-height: 30px;
+	padding: 4px 12px;
+}
+.kakam-library .lib-text-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--lib-muted);
+	font-size: 12px;
+	padding: 4px 0;
+}
+.kakam-library .lib-text-button:hover {
+	color: var(--lib-ink);
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+.kakam-library .lib-gallery-caption {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	margin-bottom: 12px;
+	font-size: 12px;
+	color: var(--lib-muted);
+}
+.kakam-library .lib-count {
+	display: inline-flex;
+	padding: 1px 6px;
+	background: var(--lib-soft);
+	border-radius: 4px;
+	margin-left: 6px;
+	font-size: 11px;
+	color: var(--lib-muted);
+}
+.kakam-library .lib-gallery {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 225px), 1fr));
+	gap: 18px;
+}
+.kakam-library .lib-conversation-card {
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	border: 1px solid var(--lib-border);
+	border-radius: 9px;
+	background: var(--lib-bg);
+	text-align: left;
+	transition:
+		box-shadow 0.16s,
+		border-color 0.16s,
+		transform 0.16s;
+}
+.kakam-library .lib-conversation-card:hover {
+	border-color: #bfc6bc;
+	box-shadow: 0 5px 18px #2430230b;
+	transform: translateY(-2px);
+}
+.kakam-library .lib-card-cover {
+	height: 123px;
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--lib-soft);
+	border-bottom: 1px solid var(--lib-border);
+	overflow: hidden;
+}
+.kakam-library .lib-paper {
+	width: 66px;
+	height: 80px;
+	border: 1px solid var(--lib-border);
+	border-radius: 5px;
+	background: var(--lib-bg);
+	padding: 11px;
+	color: #98a493;
+	box-shadow: 0 2px 4px #00000003;
+	position: relative;
+	transform: rotate(6deg);
+}
+.kakam-library .lib-paper > span {
+	display: block;
+	height: 3px;
+	background: var(--lib-border);
+	margin-top: 7px;
+	border-radius: 2px;
+}
+.kakam-library .lib-paper > span:last-child {
+	width: 65%;
+	margin-top: 5px;
+}
+.kakam-library .lib-paper-back {
+	position: absolute;
+	transform: translate(-12px, -2px) rotate(-9deg);
+}
+.kakam-library .lib-cover-caption {
+	position: absolute;
+	left: 12px;
+	bottom: 11px;
+	font-size: 9px;
+	letter-spacing: 1px;
+	color: var(--lib-muted);
+	opacity: 0.7;
+}
+.kakam-library .lib-card-body {
+	width: 100%;
+	padding: 17px 16px 12px;
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+}
+.kakam-library .lib-card-body h3 {
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.65;
+	min-height: 46px;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	overflow-wrap: anywhere;
+}
+.kakam-library .lib-card-tags {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px;
+	margin-top: 10px;
+	min-height: 21px;
+}
+.kakam-library .lib-tag {
+	display: inline-flex;
+	max-width: 100%;
+	align-items: center;
+	gap: 5px;
+	padding: 3px 6px;
+	line-height: 1.2;
+	border-radius: 4px;
+	background: #efefec;
+	color: #686c64;
+	font-size: 10px;
+}
+.kakam-library .lib-tag > span {
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+.kakam-library .lib-tag[data-tone='blue'] {
+	color: #496a7c;
+	background: #eaf1f5;
+}
+.kakam-library .lib-tag[data-tone='green'] {
+	color: #526e52;
+	background: #eaf0e7;
+}
+.kakam-library .lib-tag[data-tone='amber'] {
+	color: #8c6c34;
+	background: #f5efdf;
+}
+.kakam-library .lib-tag[data-tone='purple'] {
+	color: #73617e;
+	background: #f0eaf4;
+}
+.dark .kakam-library .lib-tag {
+	color: #b9c0b5;
+	background: #30372e;
+}
+.dark .kakam-library .lib-tag[data-tone='blue'] {
+	color: #acc7d7;
+	background: #293b45;
+}
+.dark .kakam-library .lib-tag[data-tone='green'] {
+	color: #b1cbaa;
+	background: #303f2d;
+}
+.dark .kakam-library .lib-tag[data-tone='amber'] {
+	color: #d7c195;
+	background: #423a29;
+}
+.dark .kakam-library .lib-tag[data-tone='purple'] {
+	color: #cbb7d8;
+	background: #3c3145;
+}
+.kakam-library .lib-muted-tag {
+	color: var(--lib-muted);
+	font-size: 10px;
+}
+.kakam-library .lib-card-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin-top: 19px;
+	padding-top: 10px;
+	border-top: 1px solid var(--lib-border);
+	color: var(--lib-muted);
+	font-size: 10px;
+}
+.kakam-library .lib-pagination {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-top: 25px;
+	color: var(--lib-muted);
+	font-size: 12px;
+}
+.kakam-library .lib-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+	padding: 40px 18px;
+	text-align: center;
+	color: var(--lib-muted);
+	font-size: 13px;
+}
+.kakam-library .lib-empty h3,
+.kakam-library .lib-empty h4 {
+	color: var(--lib-ink);
+	font-size: 15px;
+	font-weight: 550;
+}
+.kakam-library .lib-empty p {
+	max-width: 360px;
+	font-size: 12px;
+	line-height: 1.9;
+}
+.kakam-library .lib-empty-gallery {
+	padding: 75px 20px;
+	background: var(--lib-soft);
+	border: 1px dashed var(--lib-border);
+	border-radius: 8px;
+}
+.kakam-library .lib-empty-gallery button {
+	margin-top: 8px;
+}
+.kakam-library .lib-empty-products {
+	border: 1px dashed var(--lib-border);
+	border-radius: 8px;
+}
+.kakam-library .lib-error {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	color: #be5047;
+	background: #fbefed;
+	padding: 12px;
+	border-radius: 6px;
+	font-size: 12px;
+	margin-bottom: 16px;
+	overflow-wrap: anywhere;
+}
+.dark .kakam-library .lib-error {
+	background: #432826;
+	color: #eeaaa4;
+}
+.kakam-library .lib-skeleton {
+	height: 276px;
+	border: 1px solid var(--lib-border);
+	border-radius: 9px;
+	overflow: hidden;
+	animation: lib-pulse 1.5s ease-in-out infinite;
+}
+.kakam-library .lib-skeleton div {
+	height: 123px;
+	background: var(--lib-soft);
+}
+.kakam-library .lib-skeleton span {
+	display: block;
+	margin: 22px 16px 0;
+	width: 70%;
+	height: 12px;
+	background: var(--lib-soft);
+	border-radius: 3px;
+}
+.kakam-library .lib-skeleton span:last-child {
+	width: 35%;
+}
+.kakam-library .lib-breadcrumb {
+	margin-bottom: 26px;
+}
+.kakam-library .lib-collection-header {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 16px;
+	margin-bottom: 12px;
+}
+.kakam-library .lib-collection-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 58px;
+	height: 58px;
+	border-radius: 10px;
+	background: var(--lib-soft);
+	color: var(--lib-muted);
+	flex-shrink: 0;
+}
+.kakam-library .lib-collection-title {
+	flex: 1;
+	min-width: 180px;
+}
+.kakam-library .lib-collection-title h2 {
+	font-size: 23px;
+	font-weight: 650;
+	line-height: 1.5;
+	letter-spacing: -0.5px;
+	overflow-wrap: anywhere;
+}
+.kakam-library .lib-title-meta {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: var(--lib-muted);
+	font-size: 11px;
+	margin-top: 7px;
+}
+.kakam-library .lib-detail-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 25px;
+	margin: 26px 0 20px;
+	font-size: 12px;
+	color: var(--lib-muted);
+}
+.kakam-library .lib-detail-toolbar > .lib-search {
+	max-width: 280px;
+	margin-left: auto;
+}
+.kakam-library .lib-asset-section {
+	margin-top: 26px;
+}
+.kakam-library .lib-section-heading {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 14px;
+}
+.kakam-library .lib-section-heading h3 {
+	font-size: 14px;
+	font-weight: 600;
+}
+.kakam-library .lib-section-heading > span {
+	color: var(--lib-muted);
+	font-size: 12px;
+}
+.kakam-library .lib-assets-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 215px), 1fr));
+	gap: 14px;
+}
+.kakam-library .lib-asset-card {
+	min-width: 0;
+	border: 1px solid var(--lib-border);
+	border-radius: 8px;
+	padding: 17px;
+	background: var(--lib-bg);
+}
+.kakam-library .lib-asset-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	margin-bottom: 17px;
+}
+.kakam-library .lib-file-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 44px;
+	border: 1px solid var(--lib-border);
+	border-radius: 6px;
+	color: var(--lib-muted);
+	background: var(--lib-soft);
+}
+.kakam-library .lib-format {
+	color: var(--lib-muted);
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 0.6px;
+	padding: 3px 5px;
+	border-radius: 3px;
+	background: var(--lib-soft);
+}
+.kakam-library .lib-asset-card h4 {
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	overflow-wrap: anywhere;
+	font-size: 13px;
+	font-weight: 550;
+	line-height: 1.6;
+	min-height: 42px;
+}
+.kakam-library .lib-asset-meta {
+	color: var(--lib-muted);
+	font-size: 10px;
+	margin-top: 7px;
+	line-height: 1.8;
+}
+.kakam-library .lib-asset-actions {
+	display: flex;
+	align-items: center;
+	gap: 15px;
+	border-top: 1px solid var(--lib-border);
+	padding-top: 12px;
+	margin-top: 14px;
+	min-height: 43px;
+}
+.kakam-library .lib-secondary-assets {
+	padding-top: 21px;
+	margin-top: 24px;
+	border-top: 1px solid var(--lib-border);
+}
+.kakam-library .lib-secondary-assets > summary {
+	cursor: pointer;
+	font-size: 13px;
+	color: var(--lib-muted);
+}
+.kakam-library .lib-summary-description {
+	margin-left: 12px;
+	font-size: 11px;
+}
+.kakam-library .lib-secondary-assets .lib-assets-grid {
+	margin-top: 16px;
+}
+.kakam-library .lib-load-more {
+	margin: 20px auto 0;
+	display: flex;
+}
+.kakam-library .lib-preview {
+	border: 1px solid var(--lib-border);
+	border-radius: 8px;
+	overflow: hidden;
+	margin: 16px 0 22px;
+}
+.kakam-library .lib-preview-heading {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	justify-content: space-between;
+	padding: 14px 16px;
+	background: var(--lib-soft);
+}
+.kakam-library .lib-preview-heading h3 {
+	font-size: 13px;
+	font-weight: 550;
+	margin-top: 5px;
+	overflow-wrap: anywhere;
+}
+.kakam-library .lib-preview-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 8px 16px;
+	color: var(--lib-muted);
+	font-size: 11px;
+	border-top: 1px solid var(--lib-border);
+}
+.kakam-library .lib-preview iframe {
+	width: 100%;
+	height: 440px;
+	background: white;
+	border-top: 1px solid var(--lib-border);
+}
+.kakam-library .lib-preview pre {
+	max-height: 460px;
+	overflow: auto;
+	padding: 20px;
+	font-size: 12px;
+	line-height: 1.7;
+	background: var(--lib-bg);
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+.kakam-library .lib-image-preview {
+	max-width: 100%;
+	max-height: 440px;
+	margin: auto;
+	object-fit: contain;
+}
+.kakam-library .lib-resource-summary {
+	color: var(--lib-muted);
+	font-size: 12px;
+	margin: 0 0 17px;
+}
+.kakam-library .lib-resource-manager {
+	padding-top: 4px;
+}
+@keyframes lib-pulse {
+	50% {
+		opacity: 0.45;
+	}
+}
+@container (max-width: 480px) {
+	.kakam-library .lib-gallery-toolbar {
+		flex-wrap: wrap;
+	}
+	.kakam-library .lib-gallery-toolbar .lib-search {
+		flex-basis: calc(100% - 70px);
+	}
+	.kakam-library .lib-group-filter {
+		flex: 1;
+		max-width: none;
+	}
+	.kakam-library .lib-view-tabs {
+		gap: 20px;
+	}
+	.kakam-library .lib-page-header h2 {
+		font-size: 26px;
+	}
+	.kakam-library .lib-collection-title h2 {
+		font-size: 21px;
+	}
+	.kakam-library .lib-summary-description {
+		display: block;
+		margin: 8px 0 0 16px;
+	}
+	.kakam-library .lib-gallery {
+		gap: 14px;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.kakam-library .lib-conversation-card {
+		transition: none;
+	}
+	.kakam-library .lib-conversation-card:hover {
+		transform: none;
+	}
+	.kakam-library .lib-skeleton {
+		animation: none;
+	}
+}

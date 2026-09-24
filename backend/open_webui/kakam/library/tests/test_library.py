@@ -28,6 +28,14 @@ class Chat(Base):
     updated_at = Column(BigInteger)
     archived = Column(Boolean)
     current_message_id = Column(String)
+    folder_id = Column(String)
+
+
+class Folder(Base):
+    __tablename__ = 'folder'
+    id = Column(String, primary_key=True)
+    user_id = Column(String)
+    name = Column(String)
 
 
 class ChatFile(Base):
@@ -77,6 +85,7 @@ def install(monkeypatch, name, **attrs):
 def test_repository_isolation_legacy_provenance_and_pagination(monkeypatch):
     monkeypatch.setattr(repository, 'models', lambda: (Chat, ChatFile, File, Note))
     install(monkeypatch, 'open_webui.models.chat_messages', ChatMessage=ChatMessage)
+    install(monkeypatch, 'open_webui.models.folders', Folder=Folder)
 
     async def run():
         engine = create_async_engine('sqlite+aiosqlite://')
@@ -162,6 +171,55 @@ def test_repository_isolation_legacy_provenance_and_pagination(monkeypatch):
     asyncio.run(run())
 
 
+def test_gallery_groups_filter_before_pagination_and_do_not_leak_names(monkeypatch):
+    monkeypatch.setattr(repository, 'models', lambda: (Chat, ChatFile, File, Note))
+    install(monkeypatch, 'open_webui.models.folders', Folder=Folder)
+    install(monkeypatch, 'open_webui.models.chat_messages', ChatMessage=ChatMessage)
+
+    async def run():
+        engine = create_async_engine('sqlite+aiosqlite://')
+        async with engine.begin() as connection:
+            await connection.run_sync(Base.metadata.create_all)
+        async with async_sessionmaker(engine, expire_on_commit=False)() as db:
+            db.add_all(
+                [
+                    Folder(id='g1', user_id='alice', name='产品设计'),
+                    Folder(id='g2', user_id='bob', name='private group'),
+                    Folder(id='empty', user_id='alice', name='empty'),
+                    Chat(id='a', user_id='alice', title='第一版', updated_at=100, folder_id='g1', chat={}),
+                    Chat(id='b', user_id='alice', title='第二版', updated_at=200, folder_id='g1', chat={}),
+                    Chat(id='c', user_id='alice', title='未分组', updated_at=300, chat={}),
+                    Chat(
+                        id='d',
+                        user_id='alice',
+                        title='foreign folder reference',
+                        updated_at=400,
+                        folder_id='g2',
+                        chat={},
+                    ),
+                    Chat(id='e', user_id='alice', title='deleted folder', updated_at=500, folder_id='deleted', chat={}),
+                    Chat(id='foreign', user_id='bob', title='private chat', updated_at=600, folder_id='g1', chat={}),
+                ]
+            )
+            await db.commit()
+            groups = await repository.groups(db, 'alice')
+            assert [g.model_dump() for g in groups] == [{'id': 'g1', 'name': '产品设计'}]
+            page = await repository.entries(db, 'alice', 'chat', group_id='g1', limit=1, offset=1)
+            assert page.total == 2 and page.items[0].id == 'a'
+            assert page.items[0].group.name == '产品设计'
+            assert (await repository.entries(db, 'alice', 'chat', group_id='g2')).total == 0
+            assert (await repository.entries(db, 'alice', 'chat', group_id='g1', q='第二')).total == 1
+            ungrouped = await repository.entries(db, 'alice', 'chat', ungrouped=True)
+            assert {item.id for item in ungrouped.items} == {'c', 'd', 'e'}
+            assert all(item.group is None for item in ungrouped.items)
+            assert 'private group' not in ungrouped.model_dump_json()
+            assert (await repository.chat_detail(db, 'alice', 'b')).group.name == '产品设计'
+            assert (await repository.chat_detail(db, 'alice', 'd')).group is None
+        await engine.dispose()
+
+    asyncio.run(run())
+
+
 @pytest.fixture
 def endpoint(monkeypatch):
     async def verified(authorization: str = Header(default='')):
@@ -182,6 +240,7 @@ def endpoint(monkeypatch):
     monkeypatch.setattr(module, 'notes_allowed', AsyncMock(return_value=True))
     listing = AsyncMock(return_value={'items': [], 'total': 0})
     monkeypatch.setattr(repository, 'entries', listing)
+    monkeypatch.setattr(repository, 'groups', AsyncMock(return_value=[]))
     monkeypatch.setattr(repository, 'chat_detail', AsyncMock(return_value=None))
     monkeypatch.setattr(repository, 'note_detail', AsyncMock(return_value=None))
     app = FastAPI()
@@ -205,6 +264,13 @@ def test_routes_require_verified_owner_and_bound_queries(endpoint):
         assert client.get(base + invalid, headers={'Authorization': 'Bearer user'}).status_code == 422
     assert client.get('/api/custom/library/chats/foreign', headers={'Authorization': 'Bearer admin'}).status_code == 404
     assert client.get('/api/custom/library/notes/foreign', headers={'Authorization': 'Bearer user'}).status_code == 404
+    assert client.get('/api/custom/library/groups').status_code == 401
+    for role in ('user', 'admin'):
+        result = client.get('/api/custom/library/groups?user_id=foreign', headers={'Authorization': f'Bearer {role}'})
+        assert result.status_code == 200
+        assert result.headers['cache-control'] == 'private, no-store'
+        assert repository.groups.call_args.args[1] == 'current-user'
+    assert client.get(base + '&group_id=g&ungrouped=true', headers={'Authorization': 'Bearer user'}).status_code == 422
 
 
 def test_notes_feature_permissions_are_preserved(endpoint):

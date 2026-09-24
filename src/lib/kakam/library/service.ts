@@ -3,7 +3,7 @@ import {
 	buildOutputDisplayItems,
 	getOutputText
 } from '$lib/components/chat/Messages/structuredOutput';
-import type { Artifact, Attachment, ChatDetail, Message } from './types';
+import type { Artifact, Attachment, ChatAsset, ChatDetail, Entry, Message } from './types';
 
 export function safeFilename(name: string): string {
 	return (
@@ -137,3 +137,91 @@ export function formatBytes(bytes: number | null): string {
 
 export const previewDocument = (content: string) =>
 	`<!doctype html><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'">${content}`;
+
+// Read messages only to recover deliverables, never present the transcript as an asset.
+// Native files win over duplicate references; an assistant output wins over a later upload.
+export function collectChatAssets(chat: ChatDetail | null, files: Entry[]): ChatAsset[] {
+	if (!chat) return [];
+	const assets = new Map<string, ChatAsset>();
+	for (const file of files)
+		assets.set(`file:${file.id}`, {
+			id: `file:${file.id}`,
+			title: file.title,
+			fileId: file.id,
+			origin: file.origin === 'generated' ? 'generated' : 'related',
+			mime: file.content_type,
+			size: file.size,
+			timestamp: file.updated_at
+		});
+	for (const [index, message] of chat.messages.entries()) {
+		if (message.role === 'assistant') {
+			for (const [part, artifact] of extractArtifacts(
+				messageText(message),
+				`${chat.title}-${index + 1}`
+			).entries()) {
+				const id = `code:${message.id}:${part}`;
+				assets.set(id, {
+					id,
+					title: artifact.name,
+					origin: 'generated',
+					artifact,
+					mime: artifact.mime,
+					size: new Blob([artifact.content]).size,
+					timestamp: message.timestamp
+				});
+			}
+		}
+		for (const [index, file] of messageFiles(message).entries()) {
+			const nativeId = fileId(file);
+			const id = nativeId
+				? `file:${nativeId}`
+				: `external:${file.url || file.path || `${message.id}:${index}`}`;
+			const existing = assets.get(id);
+			const generated = existing?.origin === 'generated' || message.role === 'assistant';
+			assets.set(id, {
+				id,
+				title:
+					existing?.title ||
+					file.name ||
+					file.filename ||
+					file.path?.split('/').pop() ||
+					'对话附件',
+				origin: generated
+					? 'generated'
+					: message.role === 'user'
+						? 'uploaded'
+						: existing?.origin || 'related',
+				fileId: nativeId || undefined,
+				mime: existing?.mime || null,
+				size: existing?.size ?? null,
+				timestamp: existing?.timestamp || message.timestamp
+			});
+		}
+	}
+	return [...assets.values()].sort((a, b) => b.timestamp - a.timestamp);
+}
+
+export function assetFormat(asset: Pick<ChatAsset, 'title' | 'mime'>): string {
+	const ext = asset.title.match(/\.([a-z0-9]{1,8})$/i)?.[1]?.toUpperCase();
+	if (ext) return ext;
+	if (asset.mime?.startsWith('image/')) return '图片';
+	if (asset.mime?.startsWith('text/')) return '文本';
+	return '文件';
+}
+
+export function canPreviewAsset(asset: ChatAsset): boolean {
+	if (asset.artifact) return true;
+	if (!asset.fileId || asset.size === null || asset.size > 2 * 1024 * 1024) return false;
+	return /^(text\/|image\/(png|jpeg|gif|webp|svg\+xml)$|application\/(json|xml)$)/.test(
+		asset.mime || ''
+	);
+}
+
+export function groupTone(name: string): 'blue' | 'green' | 'amber' | 'purple' | 'neutral' {
+	if (!name) return 'neutral';
+	const hash = Array.from(name).reduce(
+		(value, character) => (value * 31 + character.charCodeAt(0)) >>> 0,
+		0
+	);
+	return (['blue', 'green', 'amber', 'purple'] as const)[hash % 4];
+}

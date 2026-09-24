@@ -9,6 +9,11 @@ class Source(BaseModel):
     message_id: str | None = None
 
 
+class Group(BaseModel):
+    id: str
+    name: str
+
+
 class Entry(BaseModel):
     id: str
     kind: Literal['chat', 'file', 'note']
@@ -19,6 +24,7 @@ class Entry(BaseModel):
     origin: Literal['generated', 'unknown'] = 'unknown'
     sources: list[Source] = Field(default_factory=list)
     archived: bool = False
+    group: Group | None = None
 
 
 class EntryPage(BaseModel):
@@ -50,6 +56,7 @@ class ChatDetail(BaseModel):
     title: str
     messages: list[Message]
     current_message_id: str | None = None
+    group: Group | None = None
 
 
 class NoteDetail(BaseModel):

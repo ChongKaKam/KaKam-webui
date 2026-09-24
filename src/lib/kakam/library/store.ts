@@ -1,8 +1,15 @@
 import { writable } from 'svelte/store';
-import { deleteEntry, getEntries, getSummary } from './api';
-import type { Entry, EntryPage, Kind, Summary } from './types';
+import { deleteEntry, getChat, getEntries, getSummary } from './api';
+import type { ChatDetail, Entry, EntryPage, Kind, Summary } from './types';
 
-export type Filters = { kind: Kind; q: string; offset: number; before?: number };
+export type Filters = {
+	kind: Kind;
+	q: string;
+	offset: number;
+	before?: number;
+	group_id?: string;
+	ungrouped?: boolean;
+};
 export function createLibraryStore(token: () => string) {
 	const state = writable<{
 		page: EntryPage;
@@ -64,4 +71,65 @@ export function createLibraryStore(token: () => string) {
 			summaryRequest?.abort();
 		}
 	};
+}
+
+export function createChatAssetsStore(token: () => string, chatId: string) {
+	const state = writable<{
+		chat: ChatDetail | null;
+		files: Entry[];
+		total: number;
+		loading: boolean;
+		loadingMore: boolean;
+		error: string;
+		filesError: string;
+	}>({
+		chat: null,
+		files: [],
+		total: 0,
+		loading: true,
+		loadingMore: false,
+		error: '',
+		filesError: ''
+	});
+	const controller = new AbortController();
+	let offset = 0;
+	let pending = false;
+	async function loadFiles() {
+		if (pending || controller.signal.aborted) return;
+		pending = true;
+		state.update((s) => ({ ...s, loadingMore: true, filesError: '' }));
+		try {
+			const result = await getEntries(
+				token(),
+				{ kind: 'file', q: '', offset, chat_id: chatId },
+				controller.signal
+			);
+			if (controller.signal.aborted) return;
+			offset += result.items.length;
+			state.update((s) => ({
+				...s,
+				files: [...new Map([...s.files, ...result.items].map((file) => [file.id, file])).values()],
+				total: result.total
+			}));
+		} catch (e) {
+			if (!controller.signal.aborted) state.update((s) => ({ ...s, filesError: String(e) }));
+		} finally {
+			pending = false;
+			if (!controller.signal.aborted) state.update((s) => ({ ...s, loadingMore: false }));
+		}
+	}
+	async function load() {
+		state.update((s) => ({ ...s, loading: true, error: '' }));
+		try {
+			const chat = await getChat(token(), chatId, controller.signal);
+			if (controller.signal.aborted) return;
+			state.update((s) => ({ ...s, chat }));
+			await loadFiles();
+		} catch (e) {
+			if (!controller.signal.aborted) state.update((s) => ({ ...s, error: String(e) }));
+		} finally {
+			if (!controller.signal.aborted) state.update((s) => ({ ...s, loading: false }));
+		}
+	}
+	return { subscribe: state.subscribe, load, loadFiles, destroy: () => controller.abort() };
 }

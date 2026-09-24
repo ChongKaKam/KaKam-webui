@@ -4,9 +4,9 @@ No retention worker or new storage copy is introduced. Deletes/downloads use
 the native APIs so storage-provider cleanup and existing permissions still apply.
 """
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import and_, func, or_, select
 
-from .schemas import ChatDetail, Entry, EntryPage, Message, NoteDetail, Source, Summary
+from .schemas import ChatDetail, Entry, EntryPage, Group, Message, NoteDetail, Source, Summary
 
 
 def file_size(meta):
@@ -54,13 +54,43 @@ async def summary(db, user_id, notes_enabled):
     )
 
 
-async def entries(db, user_id, kind, q='', offset=0, limit=30, before=None, chat_id=None):
+async def groups(db, user_id):
+    from open_webui.models.folders import Folder
+
+    Chat, _, _, _ = models()
+    rows = await db.execute(
+        select(Folder.id, Folder.name)
+        .join(Chat, Chat.folder_id == Folder.id)
+        .where(Folder.user_id == user_id, Chat.user_id == user_id)
+        .distinct()
+        .order_by(Folder.name, Folder.id)
+    )
+    return [Group(id=row.id, name=row.name or '未命名分组') for row in rows]
+
+
+def group_conditions(folder, group_id, ungrouped):
+    conditions = []
+    if group_id:
+        conditions.append(folder.id == group_id)
+    if ungrouped:
+        conditions.append(folder.id.is_(None))
+    return conditions
+
+
+async def entries(
+    db, user_id, kind, q='', offset=0, limit=30, before=None, chat_id=None, group_id=None, ungrouped=False
+):
     Chat, ChatFile, File, Note = models()
     model = {'chat': Chat, 'file': File, 'note': Note}[kind]
     title = File.filename if kind == 'file' else model.title
     columns = [model.id, title.label('title'), model.updated_at]
     columns += [File.meta] if kind == 'file' else ([Chat.archived] if kind == 'chat' else [])
     conditions = [model.user_id == user_id]
+    if kind == 'chat':
+        from open_webui.models.folders import Folder
+
+        columns += [Folder.id.label('group_id'), Folder.name.label('group_name')]
+        conditions.extend(group_conditions(Folder, group_id, ungrouped))
     if q:
         # Literal search, not caller-controlled SQL wildcards.
         pattern = q.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
@@ -80,17 +110,13 @@ async def entries(db, user_id, kind, q='', offset=0, limit=30, before=None, chat
             conditions.append(Chat.id == chat_id)
         else:
             return EntryPage(items=[], total=0)
-    total = await db.scalar(select(func.count()).select_from(model).where(*conditions))
+    query = select(*columns).select_from(model)
+    if kind == 'chat':
+        query = query.outerjoin(Folder, and_(Folder.id == Chat.folder_id, Folder.user_id == user_id))
+    query = query.where(*conditions)
+    total = await db.scalar(select(func.count()).select_from(query.subquery()))
     rows = (
-        (
-            await db.execute(
-                select(*columns)
-                .where(*conditions)
-                .order_by(model.updated_at.desc(), model.id)
-                .offset(offset)
-                .limit(limit)
-            )
-        )
+        (await db.execute(query.order_by(model.updated_at.desc(), model.id).offset(offset).limit(limit)))
         .mappings()
         .all()
     )
@@ -111,6 +137,9 @@ async def entries(db, user_id, kind, q='', offset=0, limit=30, before=None, chat
                 origin='generated' if data.get('kakam_artifact') is True else 'unknown',
                 sources=sources.get(row['id'], []),
                 archived=bool(row.get('archived')),
+                group=Group(id=row['group_id'], name=row['group_name'] or '未命名分组')
+                if row.get('group_id')
+                else None,
             )
         )
     return EntryPage(items=items, total=total)
@@ -155,11 +184,21 @@ async def file_sources(db, user_id, rows):
 
 async def chat_detail(db, user_id, chat_id):
     from open_webui.models.chat_messages import ChatMessage
+    from open_webui.models.folders import Folder
 
     Chat, _, _, _ = models()
     chat = (await db.execute(select(Chat).where(Chat.id == chat_id, Chat.user_id == user_id))).scalar_one_or_none()
     if chat is None:
         return None
+    group = None
+    if chat.folder_id:
+        folder = (
+            await db.execute(
+                select(Folder.id, Folder.name).where(Folder.id == chat.folder_id, Folder.user_id == user_id)
+            )
+        ).first()
+        if folder:
+            group = Group(id=folder.id, name=folder.name or '未命名分组')
     rows = (
         (
             await db.execute(
@@ -206,6 +245,7 @@ async def chat_detail(db, user_id, chat_id):
         id=chat.id,
         title=chat.title,
         messages=messages,
+        group=group,
         current_message_id=chat.current_message_id or ((chat.chat or {}).get('history') or {}).get('currentId'),
     )
 

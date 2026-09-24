@@ -7,14 +7,86 @@ import {
 	previewDocument,
 	exportChat,
 	safeFilename,
-	saveBlob
+	saveBlob,
+	collectChatAssets,
+	canPreviewAsset
 } from './service';
-import type { Message } from './types';
+import type { ChatDetail, Entry, Message } from './types';
 
 afterEach(() => {
 	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
 	vi.useRealTimers();
+});
+
+describe('conversation deliverables', () => {
+	const file: Entry = {
+		id: 'f1',
+		kind: 'file',
+		title: '报告.html',
+		updated_at: 12,
+		size: 100,
+		content_type: 'text/html',
+		origin: 'unknown',
+		sources: [],
+		archived: false
+	};
+	const chat = (messages: Message[]): ChatDetail => ({
+		id: 'chat',
+		title: '项目',
+		messages,
+		current_message_id: null
+	});
+	it('does not turn conversational prose or user code into deliverables', () => {
+		expect(
+			collectChatAssets(
+				chat([
+					message('This is just a conversation'),
+					{ ...message('```html\n<html>User input</html>\n```'), id: 'u', role: 'user' }
+				]),
+				[]
+			)
+		).toEqual([]);
+	});
+	it('merges duplicate saved files, links and reuploads while preserving provenance', () => {
+		const assistant = { ...message('![result](/api/v1/files/f1/content)'), files: [{ id: 'f1' }] };
+		const user = {
+			...message('thanks'),
+			id: 'u',
+			role: 'user',
+			files: [{ id: 'f1' }, { id: 'input', name: 'brief.pdf' }]
+		};
+		const assets = collectChatAssets(chat([assistant, user]), [file]);
+		expect(assets).toHaveLength(2);
+		expect(assets.find((a) => a.fileId === 'f1')).toMatchObject({
+			title: '报告.html',
+			origin: 'generated',
+			size: 100
+		});
+		expect(assets.find((a) => a.fileId === 'input')?.origin).toBe('uploaded');
+	});
+	it('preserves exact code and separates unclassified stored files and external references', () => {
+		const html = '<html>原始网页</html>';
+		const assets = collectChatAssets(
+			chat([
+				{
+					...message('```html\n' + html + '\n```'),
+					files: [{ path: '/workspace/report.csv', source: 'open_terminal' }]
+				}
+			]),
+			[file]
+		);
+		expect(assets.find((a) => a.artifact)?.artifact?.content).toBe(html);
+		expect(assets.find((a) => a.fileId === 'f1')?.origin).toBe('related');
+		expect(assets.find((a) => a.title === 'report.csv')?.fileId).toBeUndefined();
+	});
+	it('only enables native previews for bounded, supported files', () => {
+		const [asset] = collectChatAssets(chat([]), [file]);
+		expect(canPreviewAsset(asset)).toBe(true);
+		expect(canPreviewAsset({ ...asset, size: null })).toBe(false);
+		expect(canPreviewAsset({ ...asset, size: 3 * 1024 * 1024 })).toBe(false);
+		expect(canPreviewAsset({ ...asset, mime: 'application/octet-stream' })).toBe(false);
+	});
 });
 
 it('delivers exact bytes through a named download link and releases its object URL', async () => {

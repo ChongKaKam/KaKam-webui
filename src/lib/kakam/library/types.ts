@@ -1,4 +1,5 @@
 export type Kind = 'chat' | 'file' | 'note';
+export type Group = { id: string; name: string };
 export type Source = { chat_id: string; title: string; message_id: string | null };
 export type Entry = {
 	id: string;
@@ -10,6 +11,7 @@ export type Entry = {
 	origin: 'generated' | 'unknown';
 	sources: Source[];
 	archived: boolean;
+	group?: Group | null;
 };
 export type EntryPage = { items: Entry[]; total: number };
 export type Summary = {
@@ -43,6 +45,17 @@ export type ChatDetail = {
 	title: string;
 	messages: Message[];
 	current_message_id: string | null;
+	group?: Group | null;
 };
 export type NoteDetail = { id: string; title: string; content: string };
 export type Artifact = { name: string; content: string; mime: string; preview: boolean };
+export type ChatAsset = {
+	id: string;
+	title: string;
+	origin: 'generated' | 'uploaded' | 'related';
+	fileId?: string;
+	artifact?: Artifact;
+	mime: string | null;
+	size: number | null;
+	timestamp: number;
+};

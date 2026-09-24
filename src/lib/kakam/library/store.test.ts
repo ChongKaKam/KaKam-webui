@@ -1,11 +1,48 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
-import { createLibraryStore } from './store';
-import { deleteEntry, getEntries, getSummary } from './api';
-import type { Entry } from './types';
-vi.mock('./api', () => ({ deleteEntry: vi.fn(), getEntries: vi.fn(), getSummary: vi.fn() }));
+import { createChatAssetsStore, createLibraryStore } from './store';
+import { deleteEntry, getChat, getEntries, getSummary } from './api';
+import type { ChatDetail, Entry } from './types';
+vi.mock('./api', () => ({
+	deleteEntry: vi.fn(),
+	getChat: vi.fn(),
+	getEntries: vi.fn(),
+	getSummary: vi.fn()
+}));
 beforeEach(() => {
 	vi.resetAllMocks();
+});
+
+it('keeps recovered artifacts when file listing fails and retries the same page', async () => {
+	vi.mocked(getChat).mockResolvedValue({
+		id: 'a',
+		title: 'Demo',
+		messages: [],
+		current_message_id: null
+	});
+	vi.mocked(getEntries)
+		.mockRejectedValueOnce(new Error('offline'))
+		.mockResolvedValueOnce({ items: [], total: 0 });
+	const store = createChatAssetsStore(() => 'token', 'a');
+	await store.load();
+	expect(get(store).chat?.title).toBe('Demo');
+	expect(get(store).filesError).toContain('offline');
+	await store.loadFiles();
+	expect(get(store).filesError).toBe('');
+	expect(vi.mocked(getEntries).mock.calls[1][1]).toMatchObject({ offset: 0, chat_id: 'a' });
+	store.destroy();
+});
+
+it('does not update a closed collection or fetch its files after the chat arrives', async () => {
+	let resolve: (chat: ChatDetail) => void = () => {};
+	vi.mocked(getChat).mockImplementationOnce(() => new Promise((done) => (resolve = done)));
+	const store = createChatAssetsStore(() => 'token', 'a');
+	const loading = store.load();
+	store.destroy();
+	resolve({ id: 'a', title: 'closed', messages: [], current_message_id: null });
+	await loading;
+	expect(get(store).chat).toBeNull();
+	expect(getEntries).not.toHaveBeenCalled();
 });
 
 it('ignores an old request when switching filters quickly', async () => {

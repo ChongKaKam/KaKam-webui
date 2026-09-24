@@ -16,5 +16,5 @@
 		stroke="currentColor"
 		stroke-width="1.5"><path d="M3 5h7l2 3h9v12H3z" /></svg
 	>
-	本会话的消息与文件
+	查看对话产物
 </a>

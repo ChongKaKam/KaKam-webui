@@ -1,5 +1,5 @@
 import { WEBUI_BASE_URL } from '$lib/constants';
-import type { ChatDetail, EntryPage, Kind, NoteDetail, Summary } from './types';
+import type { ChatDetail, EntryPage, Group, Kind, NoteDetail, Summary } from './types';
 
 async function request<T>(path: string, token: string, signal?: AbortSignal): Promise<T> {
 	const response = await fetch(`${WEBUI_BASE_URL}/api/custom/library${path}`, {
@@ -13,6 +13,8 @@ async function request<T>(path: string, token: string, signal?: AbortSignal): Pr
 
 export const getSummary = (token: string, signal?: AbortSignal) =>
 	request<Summary>('/summary', token, signal);
+export const getGroups = (token: string, signal?: AbortSignal) =>
+	request<Group[]>('/groups', token, signal);
 export function getEntries(
 	token: string,
 	filters: {
@@ -21,6 +23,8 @@ export function getEntries(
 		offset: number;
 		before?: number;
 		chat_id?: string;
+		group_id?: string;
+		ungrouped?: boolean;
 	},
 	signal?: AbortSignal
 ) {
@@ -36,13 +40,15 @@ export const getNote = (token: string, id: string, signal?: AbortSignal) =>
 
 export async function getFileBlob(
 	token: string,
-	id: string
+	id: string,
+	signal?: AbortSignal
 ): Promise<{ blob: Blob; filename: string }> {
 	const response = await fetch(
 		`${WEBUI_BASE_URL}/api/v1/files/${encodeURIComponent(id)}/content?attachment=true`,
 		{
 			headers: { Authorization: `Bearer ${token}` },
-			cache: 'no-store'
+			cache: 'no-store',
+			signal
 		}
 	);
 	if (!response.ok) throw new Error(`文件下载失败（${response.status}），可能已删除或权限已变更`);

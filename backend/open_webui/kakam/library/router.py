@@ -6,7 +6,7 @@ from open_webui.internal.db import get_async_session
 from open_webui.utils.auth import get_verified_user
 
 from . import repository
-from .schemas import ChatDetail, EntryPage, NoteDetail, Summary
+from .schemas import ChatDetail, EntryPage, Group, NoteDetail, Summary
 
 
 async def private_response(response: Response):
@@ -39,12 +39,21 @@ async def get_entries(
     limit: int = Query(30, ge=1, le=100),
     before: int | None = Query(None, gt=0),
     chat_id: str | None = None,
+    group_id: str | None = Query(None, max_length=200),
+    ungrouped: bool = False,
     user=Depends(get_verified_user),
     db=Depends(get_async_session),
 ):
     if kind == 'note' and not await notes_allowed(user, db):
         raise HTTPException(403, 'Notes are disabled')
-    return await repository.entries(db, user.id, kind, q, offset, limit, before, chat_id)
+    if group_id and ungrouped:
+        raise HTTPException(422, 'Choose a group or ungrouped, not both')
+    return await repository.entries(db, user.id, kind, q, offset, limit, before, chat_id, group_id, ungrouped)
+
+
+@router.get('/groups', response_model=list[Group])
+async def get_groups(user=Depends(get_verified_user), db=Depends(get_async_session)):
+    return await repository.groups(db, user.id)
 
 
 @router.get('/chats/{chat_id}', response_model=ChatDetail)

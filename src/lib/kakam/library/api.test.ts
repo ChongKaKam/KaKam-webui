@@ -1,7 +1,24 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { deleteEntry, getEntries, getFileBlob } from './api';
+import { deleteEntry, getEntries, getFileBlob, getGroups } from './api';
 afterEach(() => {
 	vi.unstubAllGlobals();
+});
+
+it('requests server-side group filtering and authenticated group names', async () => {
+	const fetch = vi
+		.fn()
+		.mockImplementation(async () => new Response(JSON.stringify({ items: [], total: 0 })));
+	vi.stubGlobal('fetch', fetch);
+	await getEntries('token', { kind: 'chat', q: '', offset: 30, group_id: 'group&id' });
+	expect(fetch.mock.calls[0][0]).toContain('group_id=group%26id');
+	await getEntries('token', { kind: 'chat', q: '', offset: 0, ungrouped: true });
+	expect(fetch.mock.calls[1][0]).toContain('ungrouped=true');
+	await getGroups('token');
+	expect(fetch.mock.calls[2][0]).toMatch(/\/library\/groups$/);
+	expect(fetch.mock.calls[2][1]).toMatchObject({
+		cache: 'no-store',
+		headers: { Authorization: 'Bearer token' }
+	});
 });
 
 it('encodes names and scopes reads through authenticated no-store requests', async () => {
