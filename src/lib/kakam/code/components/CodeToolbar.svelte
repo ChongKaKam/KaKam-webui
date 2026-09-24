@@ -1,10 +1,34 @@
 <script lang="ts">
+	import Download from '$lib/components/icons/Download.svelte';
+	import { saveText } from '$lib/kakam/library/service';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import Check from '$lib/components/icons/Check.svelte';
 	import Play from '$lib/components/icons/Play.svelte';
 	import DocumentDuplicate from '$lib/components/icons/DocumentDuplicate.svelte';
 	import ChevronUpDown from '$lib/components/icons/ChevronUpDown.svelte';
 	export let language = '';
+	export let downloadText: string | undefined = undefined;
+	function download() {
+		const extensions: Record<string, string> = {
+			html: 'html',
+			svg: 'svg',
+			markdown: 'md',
+			md: 'md',
+			javascript: 'js',
+			js: 'js',
+			typescript: 'ts',
+			python: 'py',
+			py: 'py',
+			css: 'css',
+			json: 'json',
+			csv: 'csv'
+		};
+		saveText(
+			downloadText ?? '',
+			`code.${extensions[language.toLowerCase()] || 'txt'}`,
+			'text/plain'
+		);
+	}
 	export let collapsed = false;
 	export let editing = false;
 	export let editable = true;
@@ -28,6 +52,11 @@
 
 <span class="language" title={language}>{language || '代码'}</span>
 <div class="actions" role="group" aria-label="代码操作">
+	{#if downloadText !== undefined}
+		<button type="button" aria-label="下载代码文件" title="下载代码文件" on:click={download}
+			><Download className="size-4" /></button
+		>
+	{/if}
 	<button
 		type="button"
 		aria-label={collapsed ? '展开代码' : '折叠代码'}

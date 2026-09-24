@@ -1,4 +1,5 @@
 <script lang="ts">
+	import LibraryManager from '$lib/kakam/library/components/LibraryManager.svelte';
 	import SiteTokenUsage from '$lib/kakam/usage/components/SiteTokenUsage.svelte';
 	import JevSettings from '$lib/kakam/jev/components/JevSettings.svelte';
 	import MobileSettingsNav from '$lib/kakam/settings/components/MobileSettingsNav.svelte';
@@ -151,6 +152,7 @@
 		'memory-policy': 'Preferences',
 		audio: 'Preferences',
 		data_controls: 'Data',
+		library: 'Data',
 		usage: 'Data',
 		archived_chats: 'Data',
 		account: 'Profile',
@@ -514,6 +516,11 @@
 				'voicespeed',
 				'volume'
 			]
+		},
+		{
+			id: 'library',
+			title: '消息与文件',
+			keywords: ['文件', '产物', '附件', '笔记', '消息', '存储', '下载', '清理', 'notes', 'files', 'artifacts', 'storage']
 		},
 		{
 			id: 'data_controls',
@@ -1129,6 +1136,10 @@
 							<SoundHigh className="size-3.5" strokeWidth="2" />
 							<span>{$i18n.t('Audio')}</span>
 						</button>
+					{:else if tabId === 'library'}
+						<button role="tab" aria-controls="tab-library" aria-selected={selectedTab === 'library'} class={tabButtonClass(selectedTab === 'library')} on:click={() => selectedTab = 'library'}>
+							<DatabaseSettings className="size-3.5" strokeWidth="2" /><span>消息与文件</span>
+						</button>
 					{:else if tabId === 'data_controls'}
 						<button
 							role="tab"
@@ -1294,6 +1305,8 @@
 				/>
 			{:else if selectedTab === 'data_controls'}
 				<DataControls {saveSettings} />
+			{:else if selectedTab === 'library'}
+				<LibraryManager />
 			{:else if selectedTab === 'usage'}
 				<Usage />
 			{:else if selectedTab === 'archived_chats'}

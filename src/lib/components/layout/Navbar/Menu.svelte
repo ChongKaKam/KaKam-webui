@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ChatLibraryLink from '$lib/kakam/library/components/ChatLibraryLink.svelte';
 	import { toast } from 'svelte-sonner';
 	import { getContext, tick } from 'svelte';
 
@@ -348,6 +349,9 @@
 				<hr class="border-gray-50/30 dark:border-gray-800/30 mx-1 my-0.5" />
 			{/if}
 
+			{#if chat?.id && !readOnly && !$temporaryChatEnabled}
+				<ChatLibraryLink chatId={chat.id} onClose={() => onClose()} />
+			{/if}
 			{#if ($artifactContents ?? []).length > 0}
 				<button
 					draggable="false"

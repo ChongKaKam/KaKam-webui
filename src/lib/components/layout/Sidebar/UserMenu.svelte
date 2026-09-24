@@ -283,17 +283,17 @@
 				</div>
 			{/if}
 
-			{#if ($config?.features?.enable_notes ?? false) && ($user?.role === 'admin' || ($user?.permissions?.features?.notes ?? true))}
+			{#if $user?.role === 'admin' || $user?.role === 'user'}
 				<div class="flex items-center w-full">
 					<a
-						href="/notes"
+						href="/library"
 						draggable="false"
 						class="flex flex-1 h-[1.6875rem] items-center gap-2 rounded-xl px-2 text-[0.8125rem] hover:bg-gray-100 dark:hover:bg-gray-900 transition cursor-pointer select-none"
 						on:click={async (e) => {
 							if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return;
 							e.preventDefault();
 							show = false;
-							goto('/notes');
+							goto('/library');
 							if ($mobile) {
 								await tick();
 								showSidebar.set(false);
@@ -303,7 +303,7 @@
 						<div class="self-center">
 							<NotesIcon className="size-3.5" strokeWidth="1.5" />
 						</div>
-						<div class="self-center truncate">{$i18n.t('Notes')}</div>
+						<div class="self-center truncate">消息与文件</div>
 					</a>
 					{#if shiftKey}
 						<Tooltip

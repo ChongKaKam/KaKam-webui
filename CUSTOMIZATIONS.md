@@ -1,5 +1,27 @@
 # Upstream integration points
 
+## Personal message and file library
+
+Custom implementation: `src/lib/kakam/library/` and
+`backend/open_webui/kakam/library/`; native storage remains authoritative.
+See `src/lib/kakam/library/README.md` for APIs, retention, validation and limits.
+No migration, new production dependency, or Memory coupling.
+
+| Upstream file | Reason / delegated behavior |
+| --- | --- |
+| `backend/open_webui/main.py` | Register the authenticated `/api/custom/library` BFF. |
+| `backend/open_webui/utils/tools.py` | Register project-owned `publish_artifact` behind native file capability / permission gates. |
+| `src/lib/components/chat/SettingsModal.svelte` | Add the personal Data → 消息与文件 tab and mount LibraryManager. |
+| `src/lib/components/layout/Sidebar.svelte` | Redirect the existing pinned Notes navigation key to the unified library; retain pinned note links. |
+| `src/lib/components/layout/Sidebar/UserMenu.svelte` | Replace the primary Notes entry with 消息与文件, available independently of the Notes feature flag. |
+| `src/lib/components/layout/Navbar/Menu.svelte` | Mount the custom current-chat library link for saved, editable conversations. |
+| `src/lib/components/chat/Messages/CodeBlock.svelte` | Pass current code text into the existing custom toolbar's download action. |
+| `src/routes/(app)/library/+page.svelte` (new) | Thin authenticated-app route mounting the custom library component. |
+
+Old Notes pages, URLs and data remain accessible from the library. Deletion uses
+native APIs; this module introduces no automatic expiration or background purge.
+The custom `src/lib/kakam/code/components/CodeToolbar.svelte` owns direct code downloads.
+
 ## Resource-aware Docker deployment
 
 `Dockerfile`: replace the commented Node heap option with build-only

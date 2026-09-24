@@ -46,6 +46,7 @@ from open_webui.models.config import Config
 from open_webui.models.groups import Groups
 from open_webui.models.tools import Tools
 from open_webui.models.users import UserModel
+from open_webui.kakam.library.tools import publish_artifact
 from open_webui.tools.builtin import (
     add_memory,
     ask_user,
@@ -602,6 +603,15 @@ async def get_builtin_tools(
         and await has_user_chat_permission('file_upload')
     ):
         builtin_functions.extend([list_chat_files, query_chat_files, grep_chat_files, view_file])
+
+    # Project-owned artifact delivery uses native file permissions and storage.
+    if (
+        is_builtin_tool_enabled('files')
+        and get_model_capability('file_upload')
+        and is_saved_chat_id(metadata.get('chat_id'))
+        and await has_user_chat_permission('file_upload')
+    ):
+        builtin_functions.append(publish_artifact)
 
     # Knowledge base tools - conditional injection based on model knowledge
     # If model has attached knowledge (any type), only provide query_knowledge_files

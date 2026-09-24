@@ -462,6 +462,7 @@
 			>
 				<CodeToolbar
 					language={lang}
+					downloadText={_code}
 					bind:editing
 					{collapsed}
 					editable={edit}

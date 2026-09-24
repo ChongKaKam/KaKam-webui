@@ -159,10 +159,7 @@
 	const isMenuItemVisible = (id) => {
 		switch (id) {
 			case 'notes':
-				return (
-					($config?.features?.enable_notes ?? false) &&
-					($user?.role === 'admin' || ($user?.permissions?.features?.notes ?? true))
-				);
+				return $user?.role === 'admin' || $user?.role === 'user';
 			case 'workspace':
 				return (
 					$user?.role === 'admin' ||
@@ -191,7 +188,7 @@
 
 	const getMenuItemMeta = (id) => {
 		const items = {
-			notes: { label: 'Notes', href: '/notes', iconType: 'note' },
+			notes: { label: '消息与文件', href: '/library', iconType: 'note' },
 			workspace: { label: 'Workspace', href: '/workspace', iconType: 'workspace' },
 			automations: { label: 'Automations', href: '/automations', iconType: 'automations' },
 			calendar: { label: 'Calendar', href: '/calendar', iconType: 'calendar' },
@@ -201,7 +198,7 @@
 	};
 
 	const menuItemPathPrefixes = {
-		notes: '/notes',
+		notes: '/library',
 		workspace: '/workspace',
 		calendar: '/calendar',
 		automations: '/automations',
