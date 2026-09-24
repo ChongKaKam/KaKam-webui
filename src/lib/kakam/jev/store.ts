@@ -10,6 +10,7 @@ export function createJevSession() {
 		loading: true,
 		error: '',
 		models: [],
+		modelsLoaded: false,
 		modelId: '',
 		connection: null
 	});
@@ -46,7 +47,7 @@ export function createJevSession() {
 	}
 
 	async function load(preferred = '') {
-		state.update((s) => ({ ...s, loading: true, error: '' }));
+		state.update((s) => ({ ...s, loading: true, modelsLoaded: false, error: '' }));
 		await Promise.all([
 			refreshConnection(),
 			getPromptModels(lifetime.signal)
@@ -54,6 +55,7 @@ export function createJevSession() {
 					state.update((s) => ({
 						...s,
 						models,
+						modelsLoaded: true,
 						modelId: models.some((m) => m.id === s.modelId)
 							? s.modelId
 							: models.find((m) => m.id === preferred)?.id || models[0]?.id || ''
@@ -74,6 +76,7 @@ export function createJevSession() {
 			!input ||
 			current.running ||
 			current.loading ||
+			!current.modelsLoaded ||
 			!current.modelId ||
 			!current.connection?.configured
 		)

@@ -12,6 +12,14 @@ from open_webui.utils.models import get_all_models, get_filtered_models
 from .client import JevError
 
 
+def supports_chat(model: dict) -> bool:
+    # Native/provider metadata may explicitly contain null, not just omit keys.
+    info = model.get('info') or {}
+    meta = info.get('meta') or {}
+    capabilities = meta.get('capabilities') or {}
+    return bool(capabilities.get('chat', True))
+
+
 async def prompt_models(request: Request, user) -> list[dict]:
     models = await get_all_models(request, user=user)
     models = await get_filtered_models(models, user)
@@ -21,7 +29,7 @@ async def prompt_models(request: Request, user) -> list[dict]:
         if not model.get('pipe')
         and not model.get('direct')
         and model.get('owned_by') != 'arena'
-        and model.get('info', {}).get('meta', {}).get('capabilities', {}).get('chat', True)
+        and supports_chat(model)
     ]
 
 

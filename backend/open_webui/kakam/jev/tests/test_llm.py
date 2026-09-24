@@ -46,6 +46,29 @@ async def test_model_list_uses_native_permissions_and_excludes_client_only_model
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    'metadata',
+    [
+        {'info': None},
+        {'info': {'meta': None}},
+        {'info': {'meta': {'capabilities': None}}},
+    ],
+)
+async def test_nullable_metadata_does_not_break_authorized_model_list(adapter, metadata):
+    module, _, filtered = adapter
+    filtered.return_value = [
+        {'id': 'nullable', **metadata},
+        {'id': 'chat', 'name': 'Chat model'},
+        {'id': 'embedding', 'info': {'meta': {'capabilities': {'chat': False}}}},
+        {'id': 'direct', 'direct': True, **metadata},
+    ]
+    assert await module.prompt_models(object(), types.SimpleNamespace(id='user-id')) == [
+        {'id': 'nullable', 'name': 'nullable'},
+        {'id': 'chat', 'name': 'Chat model'},
+    ]
+
+
+@pytest.mark.asyncio
 async def test_dispatch_preserves_user_and_permission_check_without_chat_extensions(adapter):
     module, generate, _ = adapter
     user = types.SimpleNamespace(id='user-id')

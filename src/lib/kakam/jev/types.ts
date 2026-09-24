@@ -61,6 +61,7 @@ export type SessionState = {
 	loading: boolean;
 	error: string;
 	models: PromptModel[];
+	modelsLoaded: boolean;
 	modelId: string;
 	connection: ConnectionStatus | null;
 };

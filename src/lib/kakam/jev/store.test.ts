@@ -20,6 +20,27 @@ beforeEach(() => {
 });
 
 describe('Defer to session state', () => {
+	it('distinguishes a failed model request from an empty successful list and recovers', async () => {
+		const session = createJevSession();
+		vi.mocked(getPromptModels).mockRejectedValueOnce(new Error('500'));
+		await session.load();
+		expect(get(session).modelsLoaded).toBe(false);
+		expect(get(session).error).toContain('润色模型列表加载失败');
+		expect(await session.send('问题')).toBe(false);
+		vi.mocked(getPromptModels).mockResolvedValueOnce({ models: [] });
+		await session.load();
+		expect(get(session).modelsLoaded).toBe(true);
+		expect(get(session).models).toEqual([]);
+		expect(get(session).error).toBe('');
+		await session.load();
+		expect(get(session).modelId).toBe('m');
+		vi.mocked(getPromptModels).mockRejectedValueOnce(new Error('500'));
+		await session.load();
+		expect(get(session).modelsLoaded).toBe(false);
+		expect(await session.send('不能使用过期列表')).toBe(false);
+		expect(runJevTurn).not.toHaveBeenCalled();
+		session.destroy();
+	});
 	it('selects an available model and preserves Jev cards after polishing failure', async () => {
 		const session = createJevSession();
 		await session.load('unavailable');

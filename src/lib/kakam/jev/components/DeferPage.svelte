@@ -97,10 +97,14 @@
 				><span>润色模型</span><select
 					aria-label="润色模型"
 					value={$session.modelId}
-					disabled={$session.running || !$session.models.length}
+					disabled={$session.running || !$session.modelsLoaded || !$session.models.length}
 					on:change={(event) => session.selectModel(event.currentTarget.value)}
 					>{#if !$session.models.length}<option value=""
-							>{$session.loading ? '加载中…' : '暂无可用模型'}</option
+							>{$session.loading
+								? '加载中…'
+								: !$session.modelsLoaded
+									? '模型加载失败'
+									: '暂无可用模型'}</option
 						>{/if}{#each $session.models as model}<option value={model.id}>{model.name}</option
 						>{/each}</select
 				></label
@@ -207,7 +211,9 @@
 						>配置 Jev ↗</button
 					>{:else}<button on:click={() => session.refreshConnection()}>刷新状态</button>{/if}
 			</div>{/if}
-		{#if !$session.loading && !$session.models.length}<div class="connection-notice">
+		{#if !$session.loading && $session.modelsLoaded && !$session.models.length}<div
+				class="connection-notice"
+			>
 				<span>请先在模型管理中启用一个可用的 LLM，作为润色模型。</span><button
 					on:click={() => session.load()}>重新加载</button
 				>
@@ -236,6 +242,7 @@
 						class="send"
 						aria-label="发送判断"
 						disabled={!input.trim() ||
+							!$session.modelsLoaded ||
 							!$session.modelId ||
 							!$session.connection?.configured ||
 							$session.loading}
