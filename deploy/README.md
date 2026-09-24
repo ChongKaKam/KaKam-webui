@@ -36,6 +36,20 @@ KAKAM_BUILD_NODE_HEAP_MB=6144 KAKAM_DEPLOY_WAIT_SECONDS=600 bash deploy.sh
 该堆参数由脚本导出并传给 Docker build，**仅影响构建阶段**；不更改运行时模型配置。
 单独执行 Compose build 时也可通过同名环境变量或 `.env.kakam` 覆盖。
 
+KaKam 生产镜像默认不生成前端 sourcemap，减少 Rollup 在生成最终资源时的内存占用；
+页面功能不受影响，浏览器调试时无法映射到原始 TypeScript / Svelte 源码。
+需要映射文件时设置 `KAKAM_BUILD_SOURCEMAP=true`，并为构建预留更多内存。
+普通 Dockerfile 构建保持原来的 sourcemap 默认值 `true`。
+
+在没有可用 Swap、但可用 RAM 至少为 6144MB 的服务器上，可使用：
+
+```sh
+KAKAM_BUILD_NODE_HEAP_MB=4096 bash deploy.sh --check
+KAKAM_BUILD_NODE_HEAP_MB=4096 bash deploy.sh
+```
+
+这仍会执行同样的内存余量检查，不跳过预检或修改服务器 Swap。
+
 ## 更新前备份与失败恢复
 
 构建后、重建容器前，会在仓库同级 `kakam-deploy-backups/deploy-时间-随机串/` 中保存：

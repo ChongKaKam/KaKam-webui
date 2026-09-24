@@ -41,7 +41,8 @@ RUN npm ci --force
 
 COPY . .
 ENV APP_BUILD_HASH=${BUILD_HASH}
-RUN npm run build
+ARG BUILD_SOURCEMAP=true
+RUN npm run build -- --sourcemap=${BUILD_SOURCEMAP}
 
 ######## WebUI backend ########
 FROM python:3.11-slim-bookworm AS base

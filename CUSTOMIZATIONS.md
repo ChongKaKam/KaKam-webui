@@ -29,6 +29,12 @@ The custom `src/lib/kakam/code/components/CodeToolbar.svelte` owns direct code d
 `KAKAM_BUILD_NODE_HEAP_MB`; `deploy.sh` checks resources, builds serially, backs up
 databases/configuration, and waits for container health. See `deploy/README.md`.
 
+The frontend build also accepts `BUILD_SOURCEMAP` (Dockerfile default `true`) and
+passes it to Vite through the existing npm build command. KaKam Compose defaults
+`KAKAM_BUILD_SOURCEMAP` to `false` to reduce peak memory during chunk generation on
+small deployment hosts; source maps can be explicitly re-enabled for debugging.
+This changes build artifacts only, not runtime application features.
+
 ## Administrator Memory provider configuration
 
 | Upstream file | Reason / delegated behavior |
